@@ -157,6 +157,15 @@ const LANGUAGES = {
     },
 };
 
+function detectSystemLanguage() {
+    try {
+        const lang = (navigator.language || navigator.userLanguage || '').toLowerCase();
+        if (lang.startsWith('de')) return 'de';
+        if (lang.startsWith('en')) return 'en';
+    } catch (e) {}
+    return 'it';
+}
+
 let currentLang = 'it';
 
 function t(key) {

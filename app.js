@@ -361,66 +361,135 @@ function updateCountdown() {
     elements.nextUpdate.textContent = `${t('nextUpdate')}: ${mins}m ${secs.toString().padStart(2, '0')}s`;
 }
 
-async function checkNotifications(currentPrice, avgPrice) {
-    if (!('Notification' in window)) return;
-    if (Notification.permission !== 'granted') return;
+function androidNotify(title, body) {
+    try {
+        if (window.AndroidNotifier && window.AndroidNotifier.isAvailable()) {
+            window.AndroidNotifier.showNotification(title, body);
+            return true;
+        }
+    } catch (e) {}
+    return false;
+}
 
+function androidNotifPermission() {
+    try {
+        if (window.AndroidNotifier && window.AndroidNotifier.isAvailable()) {
+            return window.AndroidNotifier.getPermissionStatus();
+        }
+    } catch (e) {}
+    return null;
+}
+
+async function checkNotifications(currentPrice, avgPrice) {
     const lastNotified = localStorage.getItem('deloa_last_notified');
     const today = new Date().toDateString();
     if (lastNotified === today) return;
 
+    let canNotify = androidNotifPermission() === 'granted';
+    if (!canNotify && 'Notification' in window) {
+        canNotify = Notification.permission === 'granted';
+    }
+    if (!canNotify) return;
+
     if (currentPrice) {
         if (currentPrice.price < avgPrice * 0.7) {
-            new Notification(`Deloa Energy - ${t('notifCheap')}`, {
-                body: t('notifCheapBody').replace('{price}', currentPrice.price.toFixed(3)),
-                icon: 'icon-192.png',
-                tag: 'cheap-hour',
-            });
+            const title = `Deloa Energy - ${t('notifCheap')}`;
+            const body = t('notifCheapBody').replace('{price}', currentPrice.price.toFixed(3));
+            if (!androidNotify(title, body)) {
+                new Notification(title, { body, icon: 'icon-192.png', tag: 'cheap-hour' });
+            }
             localStorage.setItem('deloa_last_notified', today);
         } else if (currentPrice.price > avgPrice * 1.4) {
-            new Notification(`Deloa Energy - ${t('notifExpensive')}`, {
-                body: t('notifExpensiveBody').replace('{price}', currentPrice.price.toFixed(3)),
-                icon: 'icon-192.png',
-                tag: 'expensive-hour',
-            });
+            const title = `Deloa Energy - ${t('notifExpensive')}`;
+            const body = t('notifExpensiveBody').replace('{price}', currentPrice.price.toFixed(3));
+            if (!androidNotify(title, body)) {
+                new Notification(title, { body, icon: 'icon-192.png', tag: 'expensive-hour' });
+            }
             localStorage.setItem('deloa_last_notified', today);
         }
     }
 }
 
-function setTheme(theme) {
+function getSystemTheme() {
+    try { return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+    catch (e) { return 'dark'; }
+}
+
+function setTheme(theme, isAuto) {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('deloa-theme', theme);
+    if (isAuto) {
+        localStorage.removeItem('deloa-theme');
+    } else {
+        localStorage.setItem('deloa-theme', theme);
+    }
     elements.themeIcon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
     document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#1C1B1F' : '#F6F2F7';
 }
 
 function toggleTheme() {
+    const saved = localStorage.getItem('deloa-theme');
     const current = document.documentElement.getAttribute('data-theme');
-    setTheme(current === 'dark' ? 'light' : 'dark');
+    if (saved) {
+        setTheme(current === 'dark' ? 'light' : 'dark');
+    } else {
+        setTheme(current === 'dark' ? 'light' : 'dark');
+    }
 }
 
+const darkModeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+darkModeMedia.addEventListener('change', (e) => {
+    if (!localStorage.getItem('deloa-theme')) {
+        setTheme(e.matches ? 'dark' : 'light', true);
+    }
+});
+
 async function requestNotificationPermission() {
-    if (!('Notification' in window)) {
-        showSnackbar(t('noNotifSupport'));
-        return;
+    try {
+        if (window.AndroidNotifier && window.AndroidNotifier.isAvailable()) {
+            const cur = window.AndroidNotifier.getPermissionStatus();
+            if (cur === 'denied') {
+                window.AndroidNotifier.requestPermission();
+                showSnackbar('Richiesta permesso notifiche...');
+                const poll = setInterval(() => {
+                    const st = window.AndroidNotifier.getPermissionStatus();
+                    if (st !== 'denied') {
+                        clearInterval(poll);
+                        elements.notifIcon.textContent = st === 'granted' ? 'notifications' : 'notifications_off';
+                        showSnackbar(st === 'granted' ? t('notifEnabled') : t('notifDenied'));
+                    }
+                }, 500);
+                setTimeout(() => clearInterval(poll), 10000);
+            } else {
+                elements.notifIcon.textContent = cur === 'granted' ? 'notifications' : 'notifications_off';
+                showSnackbar(cur === 'granted' ? t('notifEnabled') : t('notifDenied'));
+            }
+            return;
+        }
+    } catch (e) { console.error('AndroidNotifier error:', e); }
+    if ('Notification' in window) {
+        try {
+            const permission = await Notification.requestPermission();
+            elements.notifIcon.textContent = permission === 'granted' ? 'notifications' : 'notifications_off';
+            showSnackbar(permission === 'granted' ? t('notifEnabled') : t('notifDenied'));
+            return;
+        } catch (e) { console.error('Web Notification error:', e); }
     }
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-        elements.notifIcon.textContent = 'notifications';
-        showSnackbar(t('notifEnabled'));
-    } else {
-        elements.notifIcon.textContent = 'notifications_off';
-        showSnackbar(t('notifDenied'));
-    }
+    showSnackbar('Notifiche non disponibili in questa app');
 }
 
 function updateNotificationIcon() {
-    if ('Notification' in window) {
-        elements.notifIcon.textContent = Notification.permission === 'granted'
-            ? 'notifications'
-            : 'notifications_off';
+    let granted = false;
+    try {
+        if (window.AndroidNotifier && window.AndroidNotifier.isAvailable()) {
+            granted = window.AndroidNotifier.getPermissionStatus() === 'granted';
+        }
+    } catch (e) {}
+    if (!granted) {
+        try {
+            granted = 'Notification' in window && Notification.permission === 'granted';
+        } catch (e) {}
     }
+    elements.notifIcon.textContent = granted ? 'notifications' : 'notifications_off';
 }
 
 elements.btnRefresh.addEventListener('click', () => {
@@ -452,12 +521,17 @@ if ('serviceWorker' in navigator) {
         .catch((err) => console.error('SW registration failed:', err));
 }
 
-const savedTheme = localStorage.getItem('deloa-theme') || 'dark';
-setTheme(savedTheme);
+const savedTheme = localStorage.getItem('deloa-theme');
+if (savedTheme) {
+    setTheme(savedTheme);
+} else {
+    setTheme(getSystemTheme(), true);
+}
 
-const savedLang = localStorage.getItem('deloa-lang') || 'it';
-elements.langSelect.value = savedLang;
-setLanguage(savedLang);
+const savedLang = localStorage.getItem('deloa-lang');
+const initialLang = savedLang || detectSystemLanguage();
+elements.langSelect.value = initialLang;
+setLanguage(initialLang);
 
 updateNotificationIcon();
 fetchPrices();
