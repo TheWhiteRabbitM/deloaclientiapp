@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#1C1B1F">
     <meta name="description" content="Monitora i prezzi orari dell'energia Deloa e risparmia sui consumi domestici">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Deloa Energy">
     <title>Deloa Energy - Prezzi Orari</title>
@@ -44,6 +44,7 @@
     </header>
 
     <main class="main-content">
+
         <section class="card status-card" id="status-card">
             <div class="status-card__row">
                 <span class="material-icons-round status-card__icon">bolt</span>
@@ -51,55 +52,32 @@
                     <p class="status-card__label">Prezzo attuale</p>
                     <p class="status-card__value" id="status-value">--</p>
                 </div>
+                <div class="status-card__range">
+                    <div class="status-card__range-item">
+                        <span class="status-card__range-label">min</span>
+                        <span class="status-card__range-value status-card__range-value--min" id="min-today">--</span>
+                    </div>
+                    <div class="status-card__range-item">
+                        <span class="status-card__range-label">max</span>
+                        <span class="status-card__range-value status-card__range-value--max" id="max-today">--</span>
+                    </div>
+                </div>
             </div>
             <div class="status-card__footer">
-                <span id="last-update">Ultimo: --</span>
-                <span id="next-update">Prossimo: --</span>
-            </div>
-        </section>
-
-        <section class="card compare-card" id="compare-card">
-            <h2 class="section-title">Confronto con ieri</h2>
-            <div class="compare-grid" id="compare-grid">
-                <div class="compare-item" id="compare-today">
-                    <span class="compare-item__label">Oggi</span>
-                    <span class="compare-item__value" id="compare-today-val">--</span>
+                <div class="status-card__compare">
+                    <span>ieri</span>
+                    <span class="status-card__compare-value" id="compare-yesterday-val">--</span>
                 </div>
-                <div class="compare-item" id="compare-yesterday">
-                    <span class="compare-item__label">Ieri stessa ora</span>
-                    <span class="compare-item__value" id="compare-yesterday-val">--</span>
+                <div class="status-card__compare">
+                    <span>oggi</span>
+                    <span class="status-card__compare-value" id="compare-today-val">--</span>
+                </div>
+                <div class="status-card__diff" id="compare-diff"></div>
+                <div class="status-card__times">
+                    <span id="last-update">--</span>
+                    <span id="next-update">--</span>
                 </div>
             </div>
-            <div class="compare-diff" id="compare-diff"></div>
-        </section>
-
-        <div class="cards-row">
-            <section class="card highlight-card highlight-card--best" id="best-hour-card">
-                <div class="highlight-card__icon highlight-card__icon--best">
-                    <span class="material-icons-round">bolt</span>
-                </div>
-                <div class="highlight-card__info">
-                    <p class="highlight-card__label">Più economica</p>
-                    <p class="highlight-card__value" id="best-hour">--:--</p>
-                </div>
-                <p class="highlight-card__price" id="best-price">--</p>
-            </section>
-
-            <section class="card highlight-card highlight-card--worst" id="worst-hour-card">
-                <div class="highlight-card__icon highlight-card__icon--worst">
-                    <span class="material-icons-round">warning</span>
-                </div>
-                <div class="highlight-card__info">
-                    <p class="highlight-card__label">Più costosa</p>
-                    <p class="highlight-card__value" id="worst-hour">--:--</p>
-                </div>
-                <p class="highlight-card__price" id="worst-price">--</p>
-            </section>
-        </div>
-
-        <section class="card timeline-card">
-            <h2 class="section-title">Prossimi cambiamenti</h2>
-            <div class="timeline" id="timeline"></div>
         </section>
 
         <section class="card chart-card">
@@ -121,11 +99,6 @@
             </div>
         </section>
 
-        <section class="card history-card">
-            <h2 class="section-title">Storico Prezzi</h2>
-            <div class="history-list" id="history-list"></div>
-        </section>
-
         <section class="card table-card">
             <h2 class="section-title">Dettaglio Orario</h2>
             <div class="table-container" id="price-table"></div>
@@ -136,16 +109,14 @@
                 <span class="material-icons-round">psychology</span>
                 Consumo intelligente
             </h2>
-            <div class="smart-hours" id="smart-best">
-                <p class="smart-hours__label">Migliori ore per consumare</p>
-                <div class="smart-hours__list" id="smart-best-list"></div>
-            </div>
-            <div class="smart-hours" id="smart-worst">
-                <p class="smart-hours__label">Ore da evitare</p>
-                <div class="smart-hours__list" id="smart-worst-list"></div>
-            </div>
             <div class="smart-saving" id="smart-saving"></div>
         </section>
+
+        <section class="card history-card">
+            <h2 class="section-title">Storico Prezzi</h2>
+            <div class="history-list" id="history-list"></div>
+        </section>
+
     </main>
 
     <div class="snackbar" id="snackbar" role="status" aria-live="polite">

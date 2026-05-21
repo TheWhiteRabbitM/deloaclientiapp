@@ -11,14 +11,11 @@ const elements = {
     statusValue: document.getElementById('status-value'),
     lastUpdate: document.getElementById('last-update'),
     nextUpdate: document.getElementById('next-update'),
+    minToday: document.getElementById('min-today'),
+    maxToday: document.getElementById('max-today'),
     compareToday: document.getElementById('compare-today-val'),
     compareYesterday: document.getElementById('compare-yesterday-val'),
     compareDiff: document.getElementById('compare-diff'),
-    bestHour: document.getElementById('best-hour'),
-    bestPrice: document.getElementById('best-price'),
-    worstHour: document.getElementById('worst-hour'),
-    worstPrice: document.getElementById('worst-price'),
-    timeline: document.getElementById('timeline'),
     chart: document.getElementById('chart'),
     historyList: document.getElementById('history-list'),
     priceTable: document.getElementById('price-table'),
@@ -114,8 +111,8 @@ function updateUI(history) {
     const currentHour = now.getHours();
     const avgPrice = priceData.reduce((sum, p) => sum + p.price, 0) / priceData.length;
     const currentPrice = priceData.find(p => p.hour === currentHour);
-    const cheapest = priceData.find(p => p.price === Math.min(...priceData.map(p => p.price)));
-    const mostExpensive = priceData.find(p => p.price === Math.max(...priceData.map(p => p.price)));
+    const minPrice = priceData.reduce((m, p) => p.price < m.price ? p : m);
+    const maxPrice = priceData.reduce((m, p) => p.price > m.price ? p : m);
 
     const pad = (n) => n.toString().padStart(2, '0');
 
@@ -123,131 +120,57 @@ function updateUI(history) {
         ? `${currentPrice.price.toFixed(3)} €/kWh`
         : 'N/D';
 
+    elements.minToday.textContent = `${minPrice.price.toFixed(3)}`;
+    elements.maxToday.textContent = `${maxPrice.price.toFixed(3)}`;
+
     elements.lastUpdate.textContent = `${t('lastUpdate')}: ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
-    elements.bestHour.textContent = `${pad(cheapest.hour)}:00`;
-    elements.bestPrice.textContent = `${cheapest.price.toFixed(3)} €/kWh`;
+    if (currentPrice) {
+        elements.compareToday.textContent = `${currentPrice.price.toFixed(3)} €/kWh`;
 
-    elements.worstHour.textContent = `${pad(mostExpensive.hour)}:00`;
-    elements.worstPrice.textContent = `${mostExpensive.price.toFixed(3)} €/kWh`;
+        const yesterday = history.find(h => {
+            const d = new Date(h.date);
+            const diff = (now - d) / (1000 * 60 * 60 * 24);
+            return diff >= 1 && diff < 2;
+        });
 
-    updateCompare(currentPrice, currentHour, history);
-    renderTimeline(currentHour, avgPrice);
+        if (yesterday) {
+            const yPrice = yesterday.data.find(p => p.hour === currentHour);
+            if (yPrice) {
+                elements.compareYesterday.textContent = `${yPrice.price.toFixed(3)} €/kWh`;
+                const diff = currentPrice.price - yPrice.price;
+                const pct = ((diff / yPrice.price) * 100).toFixed(1);
+                if (diff < 0) {
+                    elements.compareDiff.textContent = `-${Math.abs(diff).toFixed(3)} (${pct}%)`;
+                    elements.compareDiff.className = 'status-card__diff status-card__diff--down';
+                } else if (diff > 0) {
+                    elements.compareDiff.textContent = `+${diff.toFixed(3)} (${pct}%)`;
+                    elements.compareDiff.className = 'status-card__diff status-card__diff--up';
+                } else {
+                    elements.compareDiff.textContent = '=';
+                    elements.compareDiff.className = 'status-card__diff status-card__diff--same';
+                }
+            } else {
+                elements.compareYesterday.textContent = '--';
+                elements.compareDiff.textContent = '';
+                elements.compareDiff.className = 'status-card__diff status-card__diff--same';
+            }
+        } else {
+            elements.compareYesterday.textContent = '--';
+            elements.compareDiff.textContent = '';
+            elements.compareDiff.className = 'status-card__diff status-card__diff--same';
+        }
+    } else {
+        elements.compareToday.textContent = '--';
+        elements.compareYesterday.textContent = '--';
+        elements.compareDiff.textContent = '';
+    }
+
     renderChart(currentHour, avgPrice);
     renderHistory(history);
     renderTable(currentHour, avgPrice);
     renderSmartConsumption(avgPrice);
     checkNotifications(currentPrice, avgPrice);
-}
-
-function updateCompare(currentPrice, currentHour, history) {
-    if (!currentPrice) {
-        elements.compareToday.textContent = '--';
-        elements.compareToday.className = 'compare-item__value compare-item__value--empty';
-        elements.compareYesterday.textContent = '--';
-        elements.compareYesterday.className = 'compare-item__value compare-item__value--empty';
-        elements.compareDiff.textContent = '';
-        elements.compareDiff.className = 'compare-diff';
-        return;
-    }
-
-    elements.compareToday.textContent = `${currentPrice.price.toFixed(3)} €/kWh`;
-    elements.compareToday.className = 'compare-item__value';
-
-    const yesterday = history.find(h => {
-        const d = new Date(h.date);
-        const today = new Date();
-        const diff = (today - d) / (1000 * 60 * 60 * 24);
-        return diff >= 1 && diff < 2;
-    });
-
-    if (yesterday) {
-        const yesterdayPrice = yesterday.data.find(p => p.hour === currentHour);
-        if (yesterdayPrice) {
-            elements.compareYesterday.textContent = `${yesterdayPrice.price.toFixed(3)} €/kWh`;
-            elements.compareYesterday.className = 'compare-item__value';
-            const diff = currentPrice.price - yesterdayPrice.price;
-            const pct = ((diff / yesterdayPrice.price) * 100).toFixed(1);
-            if (diff < 0) {
-                elements.compareDiff.textContent = `${t('saving')} ${Math.abs(diff).toFixed(3)} €/kWh (${pct}%) ${t('respectYesterday')}`;
-                elements.compareDiff.className = 'compare-diff compare-diff--down';
-            } else if (diff > 0) {
-                elements.compareDiff.textContent = `${t('moreExpensive')} ${diff.toFixed(3)} €/kWh ${t('more')} (${pct}%) ${t('respectYesterday')}`;
-                elements.compareDiff.className = 'compare-diff compare-diff--up';
-            } else {
-                elements.compareDiff.textContent = t('samePrice');
-                elements.compareDiff.className = 'compare-diff compare-diff--same';
-            }
-        } else {
-            elements.compareYesterday.textContent = '--';
-            elements.compareYesterday.className = 'compare-item__value compare-item__value--empty';
-            elements.compareDiff.textContent = t('noDataYesterday');
-            elements.compareDiff.className = 'compare-diff compare-diff--same';
-        }
-    } else if (history.length > 0) {
-        elements.compareYesterday.textContent = '--';
-        elements.compareYesterday.className = 'compare-item__value compare-item__value--empty';
-        elements.compareDiff.textContent = t('dataAvailableTomorrow');
-        elements.compareDiff.className = 'compare-diff compare-diff--same';
-    } else {
-        elements.compareYesterday.textContent = '--';
-        elements.compareYesterday.className = 'compare-item__value compare-item__value--empty';
-        elements.compareDiff.textContent = t('firstLoad');
-        elements.compareDiff.className = 'compare-diff compare-diff--same';
-    }
-}
-
-function renderTimeline(currentHour, avgPrice) {
-    elements.timeline.innerHTML = '';
-
-    const upcoming = [];
-    for (let i = 1; i <= 6; i++) {
-        const h = (currentHour + i) % 24;
-        const p = priceData.find(d => d.hour === h);
-        if (p) upcoming.push({ ...p, diff: i });
-    }
-
-    const changes = [];
-    for (let i = 0; i < upcoming.length - 1; i++) {
-        const curr = upcoming[i];
-        const next = upcoming[i + 1];
-        const goingUp = next.price > curr.price * 1.1;
-        const goingDown = next.price < curr.price * 0.9;
-        if (goingUp || goingDown) {
-            changes.push({
-                from: curr,
-                to: next,
-                goingUp,
-                time: `${next.hour.toString().padStart(2, '0')}:00`,
-            });
-        }
-    }
-
-    if (changes.length === 0) {
-        elements.timeline.innerHTML = `<p style="text-align:center;color:var(--text-tertiary);font-size:13px;padding:8px 0;">${t('noChanges')}</p>`;
-        return;
-    }
-
-    changes.slice(0, 3).forEach(c => {
-        const item = document.createElement('div');
-        item.className = 'timeline-item';
-        const iconClass = c.goingUp ? 'timeline-item__icon--bad' : 'timeline-item__icon--good';
-        const iconName = c.goingUp ? 'trending_up' : 'trending_down';
-        const label = c.goingUp ? t('priceRising') : t('priceFalling');
-        const desc = `${c.from.price.toFixed(3)} → ${c.to.price.toFixed(3)} €/kWh`;
-
-        item.innerHTML = `
-            <div class="timeline-item__icon ${iconClass}">
-                <span class="material-icons-round">${iconName}</span>
-            </div>
-            <div class="timeline-item__info">
-                <p class="timeline-item__title">${label}</p>
-                <p class="timeline-item__desc">${desc}</p>
-            </div>
-            <span class="timeline-item__time">${c.time}</span>
-        `;
-        elements.timeline.appendChild(item);
-    });
 }
 
 function renderChart(currentHour, avgPrice) {
@@ -327,26 +250,13 @@ function renderTable(currentHour, avgPrice) {
 }
 
 function renderSmartConsumption(avgPrice) {
-    const bestList = document.getElementById('smart-best-list');
-    const worstList = document.getElementById('smart-worst-list');
     const savingEl = document.getElementById('smart-saving');
-    if (!bestList || !worstList || !savingEl) return;
+    if (!savingEl) return;
 
     const sorted = [...priceData].sort((a, b) => a.price - b.price);
-    const best = sorted.slice(0, 4);
-    const worst = sorted.slice(-4).reverse();
-
-    bestList.innerHTML = best.map(p =>
-        `<span class="smart-chip smart-chip--green">${String(p.hour).padStart(2, '0')}:00 <span class="smart-chip__price">${p.price.toFixed(3)}</span></span>`
-    ).join('');
-
-    worstList.innerHTML = worst.map(p =>
-        `<span class="smart-chip smart-chip--red">${String(p.hour).padStart(2, '0')}:00 <span class="smart-chip__price">${p.price.toFixed(3)}</span></span>`
-    ).join('');
-
+    const bestAvg = sorted.slice(0, 4).reduce((s, p) => s + p.price, 0) / 4;
     const consumoAnnuiKwh = 2700;
     const pctSpostabile = 30;
-    const bestAvg = best.reduce((s, p) => s + p.price, 0) / best.length;
     const costoOriginale = consumoAnnuiKwh * avgPrice;
     const consumoSpostabile = consumoAnnuiKwh * (pctSpostabile / 100);
     const costoOttimizzato = (consumoAnnuiKwh - consumoSpostabile) * avgPrice + consumoSpostabile * bestAvg;
@@ -464,13 +374,9 @@ function setTheme(theme, isAuto) {
 }
 
 function toggleTheme() {
-    const saved = localStorage.getItem('deloa-theme');
     const current = document.documentElement.getAttribute('data-theme');
-    if (saved) {
-        setTheme(current === 'dark' ? 'light' : 'dark');
-    } else {
-        setTheme(current === 'dark' ? 'light' : 'dark');
-    }
+    const saved = localStorage.getItem('deloa-theme');
+    setTheme(current === 'dark' ? 'light' : 'dark');
 }
 
 const darkModeMedia = window.matchMedia('(prefers-color-scheme: dark)');
