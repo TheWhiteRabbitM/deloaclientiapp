@@ -52,16 +52,16 @@
                     <p class="status-card__label">Prezzo attuale</p>
                     <p class="status-card__value" id="status-value">--</p>
                 </div>
-                <div class="status-card__range">
-                    <div class="status-card__range-item">
-                        <span class="status-card__range-label">min</span>
-                        <span class="status-card__range-value status-card__range-value--min" id="min-today">--</span>
+                    <div class="status-card__range">
+                        <div class="status-card__pill status-card__pill--min">
+                            <span class="status-card__pill-label">min</span>
+                            <span class="status-card__pill-value" id="min-today">--</span>
+                        </div>
+                        <div class="status-card__pill status-card__pill--max">
+                            <span class="status-card__pill-label">max</span>
+                            <span class="status-card__pill-value" id="max-today">--</span>
+                        </div>
                     </div>
-                    <div class="status-card__range-item">
-                        <span class="status-card__range-label">max</span>
-                        <span class="status-card__range-value status-card__range-value--max" id="max-today">--</span>
-                    </div>
-                </div>
             </div>
             <div class="status-card__footer">
                 <div class="status-card__compare">
@@ -78,6 +78,10 @@
                     <span id="next-update">--</span>
                 </div>
             </div>
+        </section>
+
+        <section class="card trend-card">
+            <div class="trend-card__content" id="trend-content"></div>
         </section>
 
         <section class="card chart-card">

@@ -166,11 +166,68 @@ function updateUI(history) {
         elements.compareDiff.textContent = '';
     }
 
+    renderTrendBlocks(currentHour);
     renderChart(currentHour, avgPrice);
     renderHistory(history);
     renderTable(currentHour, avgPrice);
     renderSmartConsumption(avgPrice);
     checkNotifications(currentPrice, avgPrice);
+}
+
+function renderTrendBlocks(currentHour) {
+    const container = document.getElementById('trend-content');
+    if (!container) return;
+
+    const blockSize = 3;
+    const remaining = [];
+    for (let i = 1; i < 24; i++) {
+        const h = (currentHour + i) % 24;
+        const p = priceData.find(d => d.hour === h);
+        if (p) remaining.push(p);
+    }
+
+    if (remaining.length < blockSize) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const pad = (n) => n.toString().padStart(2, '0');
+    let html = '';
+    const blockCount = Math.floor(remaining.length / blockSize);
+
+    for (let b = 0; b < blockCount; b++) {
+        const slice = remaining.slice(b * blockSize, (b + 1) * blockSize);
+        const avg = slice.reduce((s, p) => s + p.price, 0) / slice.length;
+        const firstHour = slice[0].hour;
+        const lastHour = slice[slice.length - 1].hour;
+        const label = firstHour === lastHour
+            ? `${pad(firstHour)}:00`
+            : `${pad(firstHour)}-${pad(lastHour)}`;
+
+        html += `<div class="trend-block">
+            <span class="trend-block__hours">${label}</span>
+            <span class="trend-block__price">${avg.toFixed(3)}</span>`;
+
+        if (b > 0) {
+            const prevSlice = remaining.slice((b - 1) * blockSize, b * blockSize);
+            const prevAvg = prevSlice.reduce((s, p) => s + p.price, 0) / prevSlice.length;
+            const diff = avg - prevAvg;
+            const pct = ((diff / prevAvg) * 100).toFixed(1);
+            if (diff < -0.001) {
+                html += `<span class="trend-block__change trend-block__change--down"><span class="material-icons-round">trending_down</span> ${pct}%</span>`;
+            } else if (diff > 0.001) {
+                html += `<span class="trend-block__change trend-block__change--up"><span class="material-icons-round">trending_up</span> +${pct}%</span>`;
+            } else {
+                html += `<span class="trend-block__change trend-block__change--same">=</span>`;
+            }
+        } else {
+            html += `<span class="trend-block__change trend-block__change--same">—</span>`;
+        }
+
+        html += `</div>`;
+    }
+
+    container.innerHTML = html;
 }
 
 function renderChart(currentHour, avgPrice) {
@@ -275,6 +332,8 @@ function showLoading() {
     elements.statusValue.textContent = '';
     elements.chart.innerHTML = '<div class="loading-spinner"></div>';
     elements.priceTable.innerHTML = '';
+    const trendEl = document.getElementById('trend-content');
+    if (trendEl) trendEl.innerHTML = '';
 }
 
 function showError() {
