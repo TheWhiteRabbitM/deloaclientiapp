@@ -662,56 +662,91 @@ body {
     font-weight: 500;
 }
 
-/* Tips */
-.tips-card__title {
+/* Smart Consumption */
+.smart-card__title {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.tips-card__title .material-icons-round {
-    color: var(--color-yellow);
+.smart-card__title .material-icons-round {
+    color: var(--deloa-green);
     font-size: 20px;
 }
 
-.tips-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+.smart-hours {
+    margin-bottom: 14px;
 }
 
-.tip-item {
+.smart-hours__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+}
+
+.smart-hours__list {
     display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.smart-chip {
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.smart-chip--green {
+    background-color: var(--color-green-bg);
+    color: var(--color-green);
+}
+
+[data-theme="dark"] .smart-chip--green {
+    background-color: var(--color-green-light);
+    color: #fff;
+}
+
+.smart-chip--red {
+    background-color: var(--color-red-bg);
+    color: var(--color-red);
+}
+
+[data-theme="dark"] .smart-chip--red {
+    background-color: var(--color-red-light);
+    color: #fff;
+}
+
+.smart-chip__price {
+    font-weight: 400;
+    opacity: 0.85;
+}
+
+.smart-saving {
     padding: 12px;
     border-radius: 12px;
     background-color: var(--bg-card-hover);
-}
-
-.tip-item--green {
-    border-left: 3px solid var(--color-green);
-}
-
-.tip-item--red {
-    border-left: 3px solid var(--color-red);
-}
-
-.tip-item__icon {
-    font-size: 22px;
-}
-
-.tip-item__title {
     font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: 1.2;
+    color: var(--text-secondary);
+    line-height: 1.5;
 }
 
-.tip-item__desc {
-    font-size: 11px;
+.smart-saving__highlight {
+    font-weight: 700;
+    color: var(--color-green);
+}
+
+.smart-saving__empty {
+    text-align: center;
     color: var(--text-tertiary);
-    margin-top: 2px;
+    font-size: 13px;
+    padding: 8px 0;
 }
 
 /* Snackbar */

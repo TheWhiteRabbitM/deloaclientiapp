@@ -327,13 +327,14 @@ function renderTable(currentHour, avgPrice) {
 }
 
 function renderSmartConsumption(avgPrice) {
-    const sorted = [...priceData].sort((a, b) => a.price - b.price);
-    const best = sorted.slice(0, 4);
-    const worst = sorted.slice(-4).reverse();
-
     const bestList = document.getElementById('smart-best-list');
     const worstList = document.getElementById('smart-worst-list');
     const savingEl = document.getElementById('smart-saving');
+    if (!bestList || !worstList || !savingEl) return;
+
+    const sorted = [...priceData].sort((a, b) => a.price - b.price);
+    const best = sorted.slice(0, 4);
+    const worst = sorted.slice(-4).reverse();
 
     bestList.innerHTML = best.map(p =>
         `<span class="smart-chip smart-chip--green">${String(p.hour).padStart(2, '0')}:00 <span class="smart-chip__price">${p.price.toFixed(3)}</span></span>`

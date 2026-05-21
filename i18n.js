@@ -46,6 +46,12 @@ const LANGUAGES = {
         notifCheapBody: 'Prezzo: {price} €/kWh. Usa ora gli elettrodomestici!',
         notifExpensive: 'Ora costosa',
         notifExpensiveBody: 'Prezzo: {price} €/kWh. Evita elettrodomestici energivori.',
+        smartTitle: 'Consumo intelligente',
+        smartBestLabel: 'Migliori ore per consumare',
+        smartWorstLabel: 'Ore da evitare',
+        smartSaving: 'Spostando il {pct}% dei consumi ({kwh} kWh/anno) nelle ore migliori, potresti risparmiare fino a {amount} €/anno',
+        smartNoData: 'Dati insufficienti per il calcolo',
+        smartSavingExample: 'Ricarica elettrica, lavatrice e asciugatrice nelle ore più convenienti',
         min: 'min',
         avg: 'media',
         max: 'max',
@@ -98,6 +104,12 @@ const LANGUAGES = {
         notifCheapBody: 'Preis: {price} €/kWh. Jetzt Geräte benutzen!',
         notifExpensive: 'Teure Stunde',
         notifExpensiveBody: 'Preis: {price} €/kWh. Energieintensive Geräte vermeiden.',
+        smartTitle: 'Intelligenter Stromverbrauch',
+        smartBestLabel: 'Beste Stunden zum Verbrauchen',
+        smartWorstLabel: 'Zu vermeidende Stunden',
+        smartSaving: 'Durch Verschieben von {pct}% des Verbrauchs ({kwh} kWh/Jahr) in die günstigsten Stunden könntest du bis zu {amount} €/Jahr sparen',
+        smartNoData: 'Unzureichende Daten für die Berechnung',
+        smartSavingExample: 'E-Auto laden, Waschmaschine und Trockner in den günstigsten Stunden nutzen',
         min: 'min',
         avg: 'durchschn.',
         max: 'max',
@@ -150,6 +162,12 @@ const LANGUAGES = {
         notifCheapBody: 'Price: {price} €/kWh. Use appliances now!',
         notifExpensive: 'Expensive hour',
         notifExpensiveBody: 'Price: {price} €/kWh. Avoid energy-intensive appliances.',
+        smartTitle: 'Smart consumption',
+        smartBestLabel: 'Best hours to consume',
+        smartWorstLabel: 'Hours to avoid',
+        smartSaving: 'By shifting {pct}% of consumption ({kwh} kWh/year) to the cheapest hours, you could save up to {amount} €/year',
+        smartNoData: 'Insufficient data for calculation',
+        smartSavingExample: 'EV charging, washer and dryer during cheapest hours',
         min: 'min',
         avg: 'avg',
         max: 'max',
@@ -168,8 +186,14 @@ function detectSystemLanguage() {
 
 let currentLang = 'it';
 
-function t(key) {
-    return LANGUAGES[currentLang]?.[key] || LANGUAGES.it[key] || key;
+function t(key, params) {
+    let val = LANGUAGES[currentLang]?.[key] || LANGUAGES.it[key] || key;
+    if (params) {
+        for (const [k, v] of Object.entries(params)) {
+            val = val.replace(`{${k}}`, v);
+        }
+    }
+    return val;
 }
 
 function setLanguage(lang) {
@@ -198,7 +222,7 @@ function updateStaticTexts() {
     document.querySelector('.chart-legend__item:nth-child(3) span:last-child').textContent = t('avoid');
     document.querySelector('.history-card .section-title').textContent = t('historyTitle');
     document.querySelector('.table-card .section-title').textContent = t('hourlyDetail');
-    document.querySelector('.tips-card .section-title').textContent = t('tipsTitle');
+    document.querySelector('.smart-card .section-title').textContent = t('smartTitle');
     document.querySelector('.compare-card .section-title').textContent = t('compareTitle');
     document.querySelector('#compare-today .compare-item__label').textContent = t('today');
     document.querySelector('#compare-yesterday .compare-item__label').textContent = t('yesterday');
