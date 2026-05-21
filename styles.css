@@ -216,31 +216,31 @@ body {
 .status-card__pill {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
+    gap: 5px;
+    padding: 3px 10px 3px 8px;
     border-radius: 8px;
     font-size: 12px;
-    background-color: rgba(255,255,255,0.18);
+}
+
+.status-card__pill--min {
+    background-color: var(--color-green-light);
+}
+
+.status-card__pill--max {
+    background-color: var(--color-red-light);
 }
 
 .status-card__pill-label {
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    opacity: 0.7;
+    color: rgba(255,255,255,0.7);
 }
 
 .status-card__pill-value {
     font-weight: 700;
     font-size: 13px;
-}
-
-.status-card__pill--min .status-card__pill-value {
-    color: var(--color-green);
-}
-
-.status-card__pill--max .status-card__pill-value {
-    color: var(--color-red);
+    color: #fff;
 }
 
 .status-card__footer {

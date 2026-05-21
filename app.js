@@ -187,14 +187,14 @@ function renderTrendBlocks(currentHour) {
         if (p) remaining.push(p);
     }
 
-    if (remaining.length < blockSize) {
+    if (remaining.length === 0) {
         container.innerHTML = '';
         return;
     }
 
     const pad = (n) => n.toString().padStart(2, '0');
     let html = '';
-    const blockCount = Math.floor(remaining.length / blockSize);
+    const blockCount = Math.ceil(remaining.length / blockSize);
 
     for (let b = 0; b < blockCount; b++) {
         const slice = remaining.slice(b * blockSize, (b + 1) * blockSize);
