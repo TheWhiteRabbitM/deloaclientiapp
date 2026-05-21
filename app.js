@@ -1,7 +1,7 @@
 const API_URL = 'https://deloaenergy.it/wp-json/wp/v2/pages/2719';
 const REFRESH_INTERVAL = 60 * 60 * 1000;
 const HISTORY_KEY = 'deloa-history';
-const KWH_KEY = 'deloa-consumo-kwh';
+
 const HISTORY_DAYS = 7;
 let priceData = [];
 let refreshTimer = null;
@@ -167,66 +167,77 @@ function updateUI(history) {
         elements.compareDiff.textContent = '';
     }
 
-    renderTrendBlocks(currentHour);
+    renderBands(currentHour);
     renderChart(currentHour, avgPrice);
     renderHistory(history);
     renderTable(currentHour, avgPrice);
-    renderSmartConsumption(avgPrice);
+    renderSmartConsumption(avgPrice, currentPrice);
     checkNotifications(currentPrice, avgPrice);
 }
 
-function renderTrendBlocks(currentHour) {
-    const container = document.getElementById('trend-content');
+function getHourBand(hour) {
+    const d = new Date();
+    const day = d.getDay();
+    if (day === 0) return 'F3';
+    if (day === 6) {
+        if (hour >= 7 && hour < 23) return 'F2';
+        return 'F3';
+    }
+    if (hour >= 8 && hour < 19) return 'F1';
+    if ((hour >= 7 && hour < 8) || (hour >= 19 && hour < 23)) return 'F2';
+    return 'F3';
+}
+
+function computeBandAvg(band) {
+    const prices = priceData.filter(p => getHourBand(p.hour) === band);
+    if (prices.length === 0) return null;
+    return prices.reduce((s, p) => s + p.price, 0) / prices.length;
+}
+
+function renderBands(currentHour) {
+    const container = document.getElementById('bands-grid');
     if (!container) return;
 
-    const blockSize = 3;
-    const remaining = [];
-    for (let i = 1; i < 24; i++) {
-        const h = (currentHour + i) % 24;
-        const p = priceData.find(d => d.hour === h);
-        if (p) remaining.push(p);
-    }
+    const bands = ['F1', 'F2', 'F3'];
+    const now = new Date();
+    const currentBand = getHourBand(currentHour);
 
-    if (remaining.length === 0) {
-        container.innerHTML = '';
-        return;
-    }
-
-    const pad = (n) => n.toString().padStart(2, '0');
     let html = '';
-    const blockCount = Math.ceil(remaining.length / blockSize);
+    const bandPrices = {};
+    bands.forEach(b => { bandPrices[b] = computeBandAvg(b); });
 
-    for (let b = 0; b < blockCount; b++) {
-        const slice = remaining.slice(b * blockSize, (b + 1) * blockSize);
-        const avg = slice.reduce((s, p) => s + p.price, 0) / slice.length;
-        const firstHour = slice[0].hour;
-        const lastHour = slice[slice.length - 1].hour;
-        const label = firstHour === lastHour
-            ? `${pad(firstHour)}:00`
-            : `${pad(firstHour)}-${pad(lastHour)}`;
+    const f3Avg = bandPrices['F3'];
+    const f1Avg = bandPrices['F1'];
+    const f2Avg = bandPrices['F2'];
+    const f1Over = (f3Avg && f1Avg) ? ((f1Avg - f3Avg) / f3Avg * 100).toFixed(1) : null;
+    const f2Over = (f3Avg && f2Avg) ? ((f2Avg - f3Avg) / f3Avg * 100).toFixed(1) : null;
 
-        html += `<div class="trend-block">
-            <span class="trend-block__hours">${label}</span>
-            <span class="trend-block__price">${avg.toFixed(3)}</span>`;
+    bands.forEach(b => {
+        const active = b === currentBand ? ' band-item--active' : '';
+        const price = bandPrices[b];
+        if (price == null) return;
 
-        if (b > 0) {
-            const prevSlice = remaining.slice((b - 1) * blockSize, b * blockSize);
-            const prevAvg = prevSlice.reduce((s, p) => s + p.price, 0) / prevSlice.length;
-            const diff = avg - prevAvg;
-            const pct = ((diff / prevAvg) * 100).toFixed(1);
-            if (diff < -0.001) {
-                html += `<span class="trend-block__change trend-block__change--down"><span class="material-icons-round">trending_down</span> ${pct}%</span>`;
-            } else if (diff > 0.001) {
-                html += `<span class="trend-block__change trend-block__change--up"><span class="material-icons-round">trending_up</span> +${pct}%</span>`;
-            } else {
-                html += `<span class="trend-block__change trend-block__change--same">=</span>`;
-            }
-        } else {
-            html += `<span class="trend-block__change trend-block__change--same">—</span>`;
+        let diffHtml = '';
+        if (b === 'F3' && f1Over) {
+            diffHtml = `<div class="band-item__diff band-item__diff--less">−${f1Over}% vs F1</div>`;
+        } else if (b === 'F1' && f1Over) {
+            diffHtml = `<div class="band-item__diff band-item__diff--more">+${f1Over}% vs F3</div>`;
+        } else if (b === 'F2' && f2Over) {
+            diffHtml = `<div class="band-item__diff ${f2Over > 0 ? 'band-item__diff--more' : 'band-item__diff--less'}">${f2Over > 0 ? '+' : ''}${f2Over}% vs F3</div>`;
         }
 
-        html += `</div>`;
-    }
+        const hoursLabel = b === 'F1' ? t('bandF1Hours')
+            : b === 'F2' ? t('bandF2Hours')
+            : t('bandF3Hours');
+
+        html += `<div class="band-item${active}">
+            <div class="band-item__name band-item__name--${b.toLowerCase()}">${t('bandF' + b.slice(1))}</div>
+            <div class="band-item__hours">${hoursLabel}</div>
+            <div class="band-item__price">${price.toFixed(3)} €/kWh</div>
+            ${diffHtml}
+            ${active ? `<div style="font-size:10px;color:var(--deloa-green);margin-top:4px;font-weight:600;">${t('bandNow')}</div>` : ''}
+        </div>`;
+    });
 
     container.innerHTML = html;
 }
@@ -307,62 +318,87 @@ function renderTable(currentHour, avgPrice) {
     });
 }
 
-function getConsumoKwh() {
-    const input = document.getElementById('smart-kwh');
-    if (input) {
-        const val = parseInt(input.value, 10);
-        if (val > 0) return val;
-    }
-    return 2700;
-}
-
-function saveConsumoKwh(val) {
-    localStorage.setItem(KWH_KEY, JSON.stringify(val));
-}
-
-function renderSmartConsumption(avgPrice) {
+function renderSmartConsumption(avgPrice, currentPrice) {
     const savingEl = document.getElementById('smart-saving');
-    const input = document.getElementById('smart-kwh');
-    if (!savingEl || !input) return;
+    if (!savingEl) return;
 
-    if (!input.dataset.inited) {
-        const saved = localStorage.getItem(KWH_KEY);
-        if (saved) {
-            try { input.value = JSON.parse(saved); } catch (e) {}
-        }
-        input.dataset.inited = '1';
-        input.addEventListener('input', () => {
-            const v = parseInt(input.value, 10);
-            if (v > 0) saveConsumoKwh(v);
-            const a = priceData.reduce((s, p) => s + p.price, 0) / priceData.length;
-            renderSmartConsumption(a);
-        });
-    }
+    const now = new Date();
+    const currentHour = now.getHours();
+    const band = getHourBand(currentHour);
+    const bandPrice = computeBandAvg(band);
+    const f3Price = computeBandAvg('F3');
+    const f1Price = computeBandAvg('F1');
 
-    const consumoAnnuiKwh = getConsumoKwh();
     const sorted = [...priceData].sort((a, b) => a.price - b.price);
-    const bestAvg = sorted.slice(0, 4).reduce((s, p) => s + p.price, 0) / 4;
-    const pctSpostabile = 30;
-    const costoOriginale = consumoAnnuiKwh * avgPrice;
-    const consumoSpostabile = consumoAnnuiKwh * (pctSpostabile / 100);
-    const costoOttimizzato = (consumoAnnuiKwh - consumoSpostabile) * avgPrice + consumoSpostabile * bestAvg;
-    const risparmio = costoOriginale - costoOttimizzato;
+    const cheapest = sorted[0];
+    const mostExp = sorted[sorted.length - 1];
 
-    if (risparmio > 0) {
-        savingEl.innerHTML =
-            `<span class="smart-saving__highlight">${t('smartSaving', { pct: pctSpostabile, kwh: Math.round(consumoSpostabile), amount: risparmio.toFixed(0) })}</span>` +
-            `<br><small>${t('smartSavingExample')}</small>`;
-    } else {
-        savingEl.innerHTML = `<span class="smart-saving__empty">${t('smartNoData')}</span>`;
+    let diffPct = '';
+    let diffLabel = '';
+    if (band === 'F1' && f3Price) {
+        diffPct = ((bandPrice - f3Price) / f3Price * 100).toFixed(0);
+        diffLabel = `${diffPct}% più cara della fascia F3`;
+    } else if (band === 'F2' && f3Price) {
+        diffPct = ((bandPrice - f3Price) / f3Price * 100).toFixed(0);
+        diffLabel = `${diffPct}% più cara della fascia F3`;
+    } else if (band === 'F3' && f1Price) {
+        diffPct = ((f1Price - bandPrice) / bandPrice * 100).toFixed(0);
+        diffLabel = `${diffPct}% più economica della fascia F1`;
     }
+
+    const nextCheap = [];
+    for (let i = 1; i < 24; i++) {
+        const h = (currentHour + i) % 24;
+        const p = priceData.find(d => d.hour === h);
+        if (p && p.price <= avgPrice * 0.85) {
+            nextCheap.push(p);
+            if (nextCheap.length >= 3) break;
+        }
+    }
+
+    let nextTip = '';
+    if (nextCheap.length >= 2) {
+        const first = nextCheap[0].hour;
+        const last = nextCheap[nextCheap.length - 1].hour;
+        const avg = nextCheap.reduce((s, p) => s + p.price, 0) / nextCheap.length;
+        const saved = Math.abs(currentPrice ? currentPrice.price - avg : avg);
+        nextTip = `Tra le ${String(first).padStart(2, '0')}:00 e le ${String(last).padStart(2, '0')}:00 i prezzi scendono a ${avg.toFixed(3)} €/kWh (${((1 - avg / (currentPrice ? currentPrice.price : avgPrice)) * 100).toFixed(0)}% in meno).`;
+    }
+
+    const wmKwh = 1.5;
+    const costNow = currentPrice ? (currentPrice.price * wmKwh).toFixed(2) : '—';
+    const costLater = cheapest ? (cheapest.price * wmKwh).toFixed(2) : '—';
+    let practicalTip = '';
+    if (currentPrice && cheapest && cheapest.hour !== currentHour) {
+        const euroDiff = (currentPrice.price - cheapest.price) * wmKwh;
+        practicalTip = `Accendere la lavatrice (${wmKwh} kWh) ora costa ${costNow} €, alle ${String(cheapest.hour).padStart(2, '0')}:00 costa ${costLater} € (<b>${euroDiff.toFixed(2)} € in meno</b>).`;
+    }
+
+    savingEl.innerHTML = `
+        <div class="smart-block">
+            <div class="smart-block__label">Fascia attuale</div>
+            <div class="smart-block__value">${band} · ${bandPrice ? bandPrice.toFixed(3) : '—'} €/kWh</div>
+            <div class="smart-block__note">${diffLabel}</div>
+        </div>
+        <div class="smart-block">
+            <div class="smart-block__label">${t('smartNextTip')}</div>
+            <div class="smart-block__value">${nextTip || t('smartNoData')}</div>
+        </div>
+        <div class="smart-block">
+            <div class="smart-block__label">${t('smartExample')}</div>
+            <div class="smart-block__value">${practicalTip || t('smartNoData')}</div>
+        </div>
+    `;
 }
 
 function showLoading() {
     elements.statusValue.textContent = '';
     elements.chart.innerHTML = '<div class="loading-spinner"></div>';
     elements.priceTable.innerHTML = '';
-    const trendEl = document.getElementById('trend-content');
-    if (trendEl) trendEl.innerHTML = '';
+    const bandsEl = document.getElementById('bands-grid');
+    if (bandsEl) bandsEl.innerHTML = '';
+    const smartEl = document.getElementById('smart-saving');
+    if (smartEl) smartEl.innerHTML = '';
 }
 
 function showError() {
