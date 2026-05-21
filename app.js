@@ -1,6 +1,7 @@
 const API_URL = 'https://deloaenergy.it/wp-json/wp/v2/pages/2719';
 const REFRESH_INTERVAL = 60 * 60 * 1000;
 const HISTORY_KEY = 'deloa-history';
+const KWH_KEY = 'deloa-consumo-kwh';
 const HISTORY_DAYS = 7;
 let priceData = [];
 let refreshTimer = null;
@@ -306,13 +307,41 @@ function renderTable(currentHour, avgPrice) {
     });
 }
 
+function getConsumoKwh() {
+    const input = document.getElementById('smart-kwh');
+    if (input) {
+        const val = parseInt(input.value, 10);
+        if (val > 0) return val;
+    }
+    return 2700;
+}
+
+function saveConsumoKwh(val) {
+    localStorage.setItem(KWH_KEY, JSON.stringify(val));
+}
+
 function renderSmartConsumption(avgPrice) {
     const savingEl = document.getElementById('smart-saving');
-    if (!savingEl) return;
+    const input = document.getElementById('smart-kwh');
+    if (!savingEl || !input) return;
 
+    if (!input.dataset.inited) {
+        const saved = localStorage.getItem(KWH_KEY);
+        if (saved) {
+            try { input.value = JSON.parse(saved); } catch (e) {}
+        }
+        input.dataset.inited = '1';
+        input.addEventListener('input', () => {
+            const v = parseInt(input.value, 10);
+            if (v > 0) saveConsumoKwh(v);
+            const a = priceData.reduce((s, p) => s + p.price, 0) / priceData.length;
+            renderSmartConsumption(a);
+        });
+    }
+
+    const consumoAnnuiKwh = getConsumoKwh();
     const sorted = [...priceData].sort((a, b) => a.price - b.price);
     const bestAvg = sorted.slice(0, 4).reduce((s, p) => s + p.price, 0) / 4;
-    const consumoAnnuiKwh = 2700;
     const pctSpostabile = 30;
     const costoOriginale = consumoAnnuiKwh * avgPrice;
     const consumoSpostabile = consumoAnnuiKwh * (pctSpostabile / 100);

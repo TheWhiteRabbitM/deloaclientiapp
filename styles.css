@@ -220,14 +220,7 @@ body {
     padding: 4px 10px;
     border-radius: 8px;
     font-size: 12px;
-}
-
-.status-card__pill--min {
-    background-color: rgba(102, 187, 106, 0.2);
-}
-
-.status-card__pill--max {
-    background-color: rgba(239, 83, 80, 0.2);
+    background-color: rgba(255,255,255,0.18);
 }
 
 .status-card__pill-label {
@@ -312,12 +305,12 @@ body {
 
 /* Trend Card */
 .trend-card {
-    padding: 12px 16px;
+    padding: 8px 10px;
 }
 
 .trend-card__content {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -332,23 +325,37 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 10px 14px;
+    gap: 2px;
+    padding: 10px 16px;
     border-radius: 12px;
     background-color: var(--bg-card-hover);
-    min-width: 80px;
+    min-width: 88px;
+    position: relative;
+}
+
+.trend-block + .trend-block::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 20%;
+    height: 60%;
+    width: 1px;
+    background: var(--border-color);
 }
 
 .trend-block__hours {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
 .trend-block__price {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--text-primary);
+    line-height: 1.4;
 }
 
 .trend-block__change {
@@ -356,15 +363,20 @@ body {
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 2px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-top: 2px;
 }
 
 .trend-block__change--up {
-    color: var(--color-red);
+    color: #fff;
+    background-color: var(--color-red-light);
 }
 
 .trend-block__change--down {
-    color: var(--color-green);
+    color: #fff;
+    background-color: var(--color-green-light);
 }
 
 .trend-block__change--same {
@@ -539,6 +551,37 @@ body {
 .smart-card__title .material-icons-round {
     color: var(--deloa-green);
     font-size: 20px;
+}
+
+.smart-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.smart-input__label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
+.smart-input__field {
+    width: 110px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Roboto', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.smart-input__field:focus {
+    border-color: var(--deloa-green);
 }
 
 .smart-saving {
