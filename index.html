@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1C1B1F">
+    <meta name="description" content="Monitora i prezzi orari dell'energia Deloa e risparmia sui consumi domestici">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Deloa Energy">
+    <title>Deloa Energy - Prezzi Orari</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="top-app-bar">
+        <div class="top-app-bar__content">
+            <img src="deloa.png" alt="Deloa Energy" class="top-app-bar__logo">
+        </div>
+        <div class="top-app-bar__actions">
+            <div class="lang-selector">
+                <select id="lang-select" class="lang-select" aria-label="Language">
+                    <option value="it">IT</option>
+                    <option value="de">DE</option>
+                    <option value="en">EN</option>
+                </select>
+            </div>
+            <button class="icon-btn" id="btn-theme" aria-label="Cambia tema">
+                <span class="material-icons-round" id="theme-icon">light_mode</span>
+            </button>
+            <button class="icon-btn" id="btn-refresh" aria-label="Aggiorna">
+                <span class="material-icons-round">refresh</span>
+            </button>
+            <button class="icon-btn" id="btn-notifications" aria-label="Notifiche">
+                <span class="material-icons-round" id="notif-icon">notifications_off</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="card status-card" id="status-card">
+            <div class="status-card__row">
+                <span class="material-icons-round status-card__icon">bolt</span>
+                <div class="status-card__info">
+                    <p class="status-card__label">Prezzo attuale</p>
+                    <p class="status-card__value" id="status-value">--</p>
+                </div>
+            </div>
+            <div class="status-card__footer">
+                <span id="last-update">Ultimo: --</span>
+                <span id="next-update">Prossimo: --</span>
+            </div>
+        </section>
+
+        <section class="card compare-card" id="compare-card">
+            <h2 class="section-title">Confronto con ieri</h2>
+            <div class="compare-grid" id="compare-grid">
+                <div class="compare-item" id="compare-today">
+                    <span class="compare-item__label">Oggi</span>
+                    <span class="compare-item__value" id="compare-today-val">--</span>
+                </div>
+                <div class="compare-item" id="compare-yesterday">
+                    <span class="compare-item__label">Ieri stessa ora</span>
+                    <span class="compare-item__value" id="compare-yesterday-val">--</span>
+                </div>
+            </div>
+            <div class="compare-diff" id="compare-diff"></div>
+        </section>
+
+        <div class="cards-row">
+            <section class="card highlight-card highlight-card--best" id="best-hour-card">
+                <div class="highlight-card__icon highlight-card__icon--best">
+                    <span class="material-icons-round">bolt</span>
+                </div>
+                <div class="highlight-card__info">
+                    <p class="highlight-card__label">Più economica</p>
+                    <p class="highlight-card__value" id="best-hour">--:--</p>
+                </div>
+                <p class="highlight-card__price" id="best-price">--</p>
+            </section>
+
+            <section class="card highlight-card highlight-card--worst" id="worst-hour-card">
+                <div class="highlight-card__icon highlight-card__icon--worst">
+                    <span class="material-icons-round">warning</span>
+                </div>
+                <div class="highlight-card__info">
+                    <p class="highlight-card__label">Più costosa</p>
+                    <p class="highlight-card__value" id="worst-hour">--:--</p>
+                </div>
+                <p class="highlight-card__price" id="worst-price">--</p>
+            </section>
+        </div>
+
+        <section class="card timeline-card">
+            <h2 class="section-title">Prossimi cambiamenti</h2>
+            <div class="timeline" id="timeline"></div>
+        </section>
+
+        <section class="card chart-card">
+            <h2 class="section-title">Andamento Prezzi Oggi</h2>
+            <div class="chart-container" id="chart"></div>
+            <div class="chart-legend">
+                <div class="chart-legend__item">
+                    <span class="chart-legend__dot chart-legend__dot--cheap"></span>
+                    <span>Conviene</span>
+                </div>
+                <div class="chart-legend__item">
+                    <span class="chart-legend__dot chart-legend__dot--medium"></span>
+                    <span>Normale</span>
+                </div>
+                <div class="chart-legend__item">
+                    <span class="chart-legend__dot chart-legend__dot--expensive"></span>
+                    <span>Evita</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="card history-card">
+            <h2 class="section-title">Storico Prezzi</h2>
+            <div class="history-list" id="history-list"></div>
+        </section>
+
+        <section class="card table-card">
+            <h2 class="section-title">Dettaglio Orario</h2>
+            <div class="table-container" id="price-table"></div>
+        </section>
+
+        <section class="card tips-card">
+            <h2 class="section-title tips-card__title">
+                <span class="material-icons-round">lightbulb</span>
+                Quando usare cosa
+            </h2>
+            <div class="tips-grid">
+                <div class="tip-item tip-item--green">
+                    <span class="tip-item__icon"></span>
+                    <div>
+                        <p class="tip-item__title">Lavatrice / Asciugatrice</p>
+                        <p class="tip-item__desc">Nelle ore verdi</p>
+                    </div>
+                </div>
+                <div class="tip-item tip-item--green">
+                    <span class="tip-item__icon">🔌</span>
+                    <div>
+                        <p class="tip-item__title">Ricarica auto elettrica</p>
+                        <p class="tip-item__desc">Notte o primo pomeriggio</p>
+                    </div>
+                </div>
+                <div class="tip-item tip-item--red">
+                    <span class="tip-item__icon">🍳</span>
+                    <div>
+                        <p class="tip-item__title">Forno / Piano cottura</p>
+                        <p class="tip-item__desc">Evitare ore rosse</p>
+                    </div>
+                </div>
+                <div class="tip-item tip-item--red">
+                    <span class="tip-item__icon">❄️</span>
+                    <div>
+                        <p class="tip-item__title">Condizionatore</p>
+                        <p class="tip-item__desc">Evitare 18-22</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="snackbar" id="snackbar" role="status" aria-live="polite">
+        <span class="snackbar__message" id="snackbar-message"></span>
+        <button class="snackbar__action" id="snackbar-action">OK</button>
+    </div>
+
+    <script src="i18n.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

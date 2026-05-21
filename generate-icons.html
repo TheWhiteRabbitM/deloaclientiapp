@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Genera Icone Deloa PWA</title>
+    <style>
+        body { font-family: sans-serif; padding: 40px; text-align: center; background: #1C1B1F; color: #fff; }
+        canvas { display: none; }
+        .btn { padding: 14px 28px; font-size: 16px; cursor: pointer; background: #7B8D3C; color: white; border: none; border-radius: 12px; font-weight: 600; }
+        .btn:hover { background: #8FA34A; }
+        .preview { margin-top: 20px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .preview img { border-radius: 12px; border: 2px solid #333; }
+    </style>
+</head>
+<body>
+    <h1>Genera Icone Deloa PWA</h1>
+    <p>Genera icone 192x192 e 512x512 dal logo Deloa</p>
+    <button class="btn" onclick="generateIcons()">Genera e Scarica Icone</button>
+    <div class="preview" id="preview"></div>
+    <canvas id="canvas"></canvas>
+    <script>
+        const logoImg = new Image();
+        logoImg.src = 'deloa-logo.png';
+
+        function generateIcons() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const sizes = [192, 512];
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '';
+
+            sizes.forEach(size => {
+                canvas.width = size;
+                canvas.height = size;
+
+                const radius = size * 0.22;
+                ctx.fillStyle = '#1C1B1F';
+                ctx.beginPath();
+                ctx.roundRect(0, 0, size, size, radius);
+                ctx.fill();
+
+                const logoAspect = logoImg.width / logoImg.height;
+                let drawW, drawH, drawX, drawY;
+                const padding = size * 0.15;
+
+                if (logoAspect > 1) {
+                    drawW = size - padding * 2;
+                    drawH = drawW / logoAspect;
+                } else {
+                    drawH = size - padding * 2;
+                    drawW = drawH * logoAspect;
+                }
+                drawX = (size - drawW) / 2;
+                drawY = (size - drawH) / 2;
+
+                ctx.drawImage(logoImg, drawX, drawY, drawW, drawH);
+
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `icon-${size}.png`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.style.width = size > 200 ? '120px' : '60px';
+                    preview.appendChild(img);
+                }, 'image/png');
+            });
+        }
+    </script>
+</body>
+</html>
