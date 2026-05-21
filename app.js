@@ -4,6 +4,16 @@ const HISTORY_KEY = 'deloa-history';
 
 const HISTORY_DAYS = 7;
 let priceData = [];
+
+const APPLIANCES = [
+    { id: 'washer', icon: 'local_laundry_service', label: 'Lavatrice', kwh: 1.5 },
+    { id: 'dishwasher', icon: 'dishwasher', label: 'Lavastoviglie', kwh: 1.3 },
+    { id: 'oven', icon: 'oven', label: 'Forno', kwh: 1.0 },
+    { id: 'ev', icon: 'electric_car', label: 'Ricarica EV', kwh: 15 },
+    { id: 'dryer', icon: 'dry', label: 'Asciugatrice', kwh: 2.5 },
+    { id: 'ac', icon: 'ac_unit', label: 'Climatizzatore', kwh: 1.2 },
+];
+let selectedAppliances = new Set();
 let refreshTimer = null;
 let countdownTimer = null;
 let nextRefreshTime = null;
@@ -209,8 +219,6 @@ function renderBands(currentHour) {
     const f3Avg = bandPrices['F3'];
     const f1Avg = bandPrices['F1'];
     const f2Avg = bandPrices['F2'];
-    const f1Over = (f3Avg && f1Avg) ? ((f1Avg - f3Avg) / f3Avg * 100).toFixed(1) : null;
-    const f2Over = (f3Avg && f2Avg) ? ((f2Avg - f3Avg) / f3Avg * 100).toFixed(1) : null;
 
     bands.forEach(b => {
         const active = b === currentBand ? ' band-item--active' : '';
@@ -218,12 +226,18 @@ function renderBands(currentHour) {
         if (price == null) return;
 
         let diffHtml = '';
-        if (b === 'F3' && f1Over) {
-            diffHtml = `<div class="band-item__diff band-item__diff--less">−${f1Over}% vs F1</div>`;
-        } else if (b === 'F1' && f1Over) {
-            diffHtml = `<div class="band-item__diff band-item__diff--more">+${f1Over}% vs F3</div>`;
-        } else if (b === 'F2' && f2Over) {
-            diffHtml = `<div class="band-item__diff ${f2Over > 0 ? 'band-item__diff--more' : 'band-item__diff--less'}">${f2Over > 0 ? '+' : ''}${f2Over}% vs F3</div>`;
+        if (b === 'F3' && f1Avg) {
+            const d = ((f3Avg - f1Avg) / f1Avg * 100);
+            if (Math.abs(d) > 0.1) {
+                const isMore = d > 0;
+                diffHtml = `<div class="band-item__diff ${isMore ? 'band-item__diff--more' : 'band-item__diff--less'}">${isMore ? '+' : ''}${d.toFixed(1)}% vs F1</div>`;
+            }
+        } else if ((b === 'F1' || b === 'F2') && f3Avg) {
+            const d = ((price - f3Avg) / f3Avg * 100);
+            if (Math.abs(d) > 0.1) {
+                const isMore = d > 0;
+                diffHtml = `<div class="band-item__diff ${isMore ? 'band-item__diff--more' : 'band-item__diff--less'}">${isMore ? '+' : ''}${d.toFixed(1)}% vs F3</div>`;
+            }
         }
 
         const hoursLabel = b === 'F1' ? t('bandF1Hours')
@@ -326,69 +340,90 @@ function renderSmartConsumption(avgPrice, currentPrice) {
     const currentHour = now.getHours();
     const band = getHourBand(currentHour);
     const bandPrice = computeBandAvg(band);
-    const f3Price = computeBandAvg('F3');
-    const f1Price = computeBandAvg('F1');
+
+    let bandNote = '';
+    if (band === 'F3') {
+        const f1Price = computeBandAvg('F1');
+        if (f1Price && f1Price !== bandPrice) {
+            const d = ((bandPrice - f1Price) / f1Price * 100);
+            if (Math.abs(d) > 0.5) {
+                bandNote = d < 0
+                    ? `${Math.abs(d).toFixed(0)}% in meno della F1`
+                    : `${d.toFixed(0)}% in più della F1`;
+            }
+        }
+    } else {
+        const f3Price = computeBandAvg('F3');
+        if (f3Price) {
+            const d = ((bandPrice - f3Price) / f3Price * 100);
+            if (Math.abs(d) > 0.5 && bandPrice) {
+                bandNote = d < 0
+                    ? `${Math.abs(d).toFixed(0)}% in meno della F3`
+                    : `${d.toFixed(0)}% in più della F3`;
+            }
+        }
+    }
 
     const sorted = [...priceData].sort((a, b) => a.price - b.price);
     const cheapest = sorted[0];
     const mostExp = sorted[sorted.length - 1];
 
-    let diffPct = '';
-    let diffLabel = '';
-    if (band === 'F1' && f3Price) {
-        diffPct = ((bandPrice - f3Price) / f3Price * 100).toFixed(0);
-        diffLabel = `${diffPct}% più cara della fascia F3`;
-    } else if (band === 'F2' && f3Price) {
-        diffPct = ((bandPrice - f3Price) / f3Price * 100).toFixed(0);
-        diffLabel = `${diffPct}% più cara della fascia F3`;
-    } else if (band === 'F3' && f1Price) {
-        diffPct = ((f1Price - bandPrice) / bandPrice * 100).toFixed(0);
-        diffLabel = `${diffPct}% più economica della fascia F1`;
-    }
+    let chipsHtml = APPLIANCES.map(a => {
+        const sel = selectedAppliances.has(a.id) ? ' appliance-chip--sel' : '';
+        return `<button class="appliance-chip${sel}" data-id="${a.id}">
+            <span class="material-icons-round">${a.icon}</span>
+            <span>${a.label}</span>
+        </button>`;
+    }).join('');
 
-    const nextCheap = [];
-    for (let i = 1; i < 24; i++) {
-        const h = (currentHour + i) % 24;
-        const p = priceData.find(d => d.hour === h);
-        if (p && p.price <= avgPrice * 0.85) {
-            nextCheap.push(p);
-            if (nextCheap.length >= 3) break;
+    let resultsHtml = '';
+    selectedAppliances.forEach(id => {
+        const app = APPLIANCES.find(a => a.id === id);
+        if (!app) return;
+        const costNow = currentPrice ? (currentPrice.price * app.kwh) : null;
+        const costCheap = cheapest ? (cheapest.price * app.kwh) : null;
+        const costLate = mostExp ? (mostExp.price * app.kwh) : null;
+
+        let appRows = `
+            <div class="appliance-result__row">
+                <span class="material-icons-round">${app.icon}</span>
+                <span>${app.label}</span>
+                <span class="appliance-result__now">${costNow != null ? costNow.toFixed(2) + ' €' : '—'}</span>
+            </div>`;
+        if (cheapest && currentPrice && cheapest.hour !== currentHour && costNow != null && costCheap != null) {
+            const saved = costNow - costCheap;
+            appRows += `<div class="appliance-result__tip">
+                Se aspetti le ${String(cheapest.hour).padStart(2, '0')}:00 spendi <b>${costCheap.toFixed(2)} €</b>
+                (<b class="appliance-result__save">-${saved.toFixed(2)} €</b>)
+            </div>`;
         }
-    }
-
-    let nextTip = '';
-    if (nextCheap.length >= 2) {
-        const first = nextCheap[0].hour;
-        const last = nextCheap[nextCheap.length - 1].hour;
-        const avg = nextCheap.reduce((s, p) => s + p.price, 0) / nextCheap.length;
-        const saved = Math.abs(currentPrice ? currentPrice.price - avg : avg);
-        nextTip = `Tra le ${String(first).padStart(2, '0')}:00 e le ${String(last).padStart(2, '0')}:00 i prezzi scendono a ${avg.toFixed(3)} €/kWh (${((1 - avg / (currentPrice ? currentPrice.price : avgPrice)) * 100).toFixed(0)}% in meno).`;
-    }
-
-    const wmKwh = 1.5;
-    const costNow = currentPrice ? (currentPrice.price * wmKwh).toFixed(2) : '—';
-    const costLater = cheapest ? (cheapest.price * wmKwh).toFixed(2) : '—';
-    let practicalTip = '';
-    if (currentPrice && cheapest && cheapest.hour !== currentHour) {
-        const euroDiff = (currentPrice.price - cheapest.price) * wmKwh;
-        practicalTip = `Accendere la lavatrice (${wmKwh} kWh) ora costa ${costNow} €, alle ${String(cheapest.hour).padStart(2, '0')}:00 costa ${costLater} € (<b>${euroDiff.toFixed(2)} € in meno</b>).`;
-    }
+        resultsHtml += appRows;
+    });
 
     savingEl.innerHTML = `
         <div class="smart-block">
             <div class="smart-block__label">Fascia attuale</div>
             <div class="smart-block__value">${band} · ${bandPrice ? bandPrice.toFixed(3) : '—'} €/kWh</div>
-            <div class="smart-block__note">${diffLabel}</div>
+            ${bandNote ? `<div class="smart-block__note">${bandNote}</div>` : ''}
         </div>
-        <div class="smart-block">
-            <div class="smart-block__label">${t('smartNextTip')}</div>
-            <div class="smart-block__value">${nextTip || t('smartNoData')}</div>
+        <div class="smart-appliances">
+            <div class="smart-appliances__label">${t('smartPickAppliance')}</div>
+            <div class="smart-appliances__chips">${chipsHtml}</div>
         </div>
-        <div class="smart-block">
-            <div class="smart-block__label">${t('smartExample')}</div>
-            <div class="smart-block__value">${practicalTip || t('smartNoData')}</div>
-        </div>
+        ${resultsHtml ? `<div class="smart-appliances__results">${resultsHtml}</div>` : ''}
     `;
+
+    savingEl.querySelectorAll('.appliance-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.dataset.id;
+            if (selectedAppliances.has(id)) {
+                selectedAppliances.delete(id);
+            } else {
+                selectedAppliances.add(id);
+            }
+            renderSmartConsumption(avgPrice, currentPrice);
+        });
+    });
 }
 
 function showLoading() {
