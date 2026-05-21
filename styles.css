@@ -366,6 +366,14 @@ body {
     }
 }
 
+.bands-explain {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    line-height: 1.5;
+    margin-top: 10px;
+    padding: 0 2px;
+}
+
 /* Chart */
 .chart-container {
     display: flex;
@@ -566,31 +574,19 @@ body {
     margin-top: 4px;
 }
 
-.smart-appliances {
-    margin-top: 6px;
-}
-
-.smart-appliances__label {
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 6px;
-}
-
 .smart-appliances__chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    margin-top: 2px;
 }
 
 .appliance-chip {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 6px 10px;
-    border-radius: 20px;
+    gap: 6px;
+    padding: 7px 8px;
+    border-radius: 10px;
     border: 1.5px solid var(--border-color);
     background: transparent;
     color: var(--text-secondary);
@@ -598,6 +594,14 @@ body {
     font-family: inherit;
     cursor: pointer;
     transition: all 0.15s;
+    text-align: left;
+    width: 100%;
+}
+
+@media (max-width: 420px) {
+    .smart-appliances__chips {
+        grid-template-columns: 1fr;
+    }
 }
 
 .appliance-chip .material-icons-round {
@@ -620,44 +624,83 @@ body {
     margin-top: 8px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .appliance-result__row {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 10px;
-    border-radius: 10px;
+    padding: 8px 10px 6px;
+    border-radius: 10px 10px 0 0;
     background: var(--bg-card-hover);
     font-size: 13px;
     color: var(--text-primary);
 }
 
 .appliance-result__row .material-icons-round {
-    font-size: 16px;
+    font-size: 18px;
     color: var(--text-tertiary);
 }
 
-.appliance-result__row span:nth-child(2) {
+.appliance-result__name {
     flex: 1;
+    font-weight: 600;
+}
+
+.appliance-result__kwh {
+    font-weight: 400;
+    font-size: 11px;
+    color: var(--text-tertiary);
 }
 
 .appliance-result__now {
     font-weight: 700;
-    color: var(--color-red);
+    font-size: 15px;
     white-space: nowrap;
 }
 
-.appliance-result__tip {
-    font-size: 12px;
-    color: var(--text-secondary);
-    padding: 4px 10px 8px 32px;
-    line-height: 1.4;
+.appliance-result__bars {
+    padding: 0 10px 8px;
+    border-radius: 0 0 10px 10px;
+    background: var(--bg-card-hover);
 }
 
-.appliance-result__save {
+.appliance-result__bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 2px 0;
+}
+
+.appliance-result__bar-val {
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.appliance-result__bar-val--high {
+    color: var(--color-red);
+}
+
+.appliance-result__bar-val--low {
     color: var(--color-green);
+}
+
+.appliance-result__saved {
+    text-align: center;
+    font-size: 12px;
+    color: var(--color-green);
+    font-weight: 600;
+    padding: 4px 0 2px;
+    border-top: 1px solid var(--border-color);
+    margin-top: 4px;
+}
+
+.appliance-result__saved--now {
+    color: var(--text-tertiary);
+    border-top: none;
 }
 
 /* History Card */

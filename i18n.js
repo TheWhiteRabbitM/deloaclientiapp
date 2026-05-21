@@ -12,6 +12,7 @@ const LANGUAGES = {
         bandF2Hours: 'Lun-Ven 7-8, 19-23 + Sab 7-23',
         bandF3Hours: 'Lun-Sab 23-7 + Dom tutto il giorno',
         bandNow: 'Ora in corso',
+        bandExplain: 'Confronta i prezzi orari Deloa con le fasce ARERA F1/F2/F3 usate dai fornitori tradizionali. Se la tua tariffa attuale è a fasce, questo confronto ti mostra quanto pagheresti oggi con Deloa rispetto alla media di fascia.',
         priceTrend: 'Andamento Prezzi Oggi',
         convenient: 'Conviene',
         normal: 'Normale',
@@ -50,6 +51,7 @@ const LANGUAGES = {
         bandF2Hours: 'Mo-Fr 7-8, 19-23 + Sa 7-23',
         bandF3Hours: 'Mo-Sa 23-7 + So ganzer Tag',
         bandNow: 'Aktuelle Zone',
+        bandExplain: 'Vergleiche die stündlichen Deloa-Preise mit den ARERA-Zonen F1/F2/F3, die von traditionellen Anbietern verwendet werden. Falls dein aktueller Tarif nach Zonen abgerechnet wird, siehst du hier, was du heute mit Deloa im Vergleich zum Zonendurchschnitt zahlen würdest.',
         priceTrend: 'Preisverlauf Heute',
         convenient: 'Günstig',
         normal: 'Normal',
@@ -88,6 +90,7 @@ const LANGUAGES = {
         bandF2Hours: 'Mon-Fri 7-8, 19-23 + Sat 7-23',
         bandF3Hours: 'Mon-Sat 23-7 + Sun all day',
         bandNow: 'Current band',
+        bandExplain: 'Compare Deloa\'s hourly prices with ARERA bands F1/F2/F3 used by traditional suppliers. If your current plan is band-based, this shows what you\'d pay today with Deloa vs the band average.',
         priceTrend: "Today's Price Trend",
         convenient: 'Good deal',
         normal: 'Normal',
@@ -155,6 +158,8 @@ function updateStaticTexts() {
     document.querySelector('#next-update').textContent = t('nextUpdate') + ': --';
     const bandTitle = document.querySelector('.bands-card .section-title');
     if (bandTitle) bandTitle.textContent = t('bandTitle');
+    const bandExplain = document.getElementById('bands-explain');
+    if (bandExplain) bandExplain.textContent = t('bandExplain');
     document.querySelector('.chart-card .section-title').textContent = t('priceTrend');
     document.querySelector('.chart-legend__item:nth-child(1) span:last-child').textContent = t('convenient');
     document.querySelector('.chart-legend__item:nth-child(2) span:last-child').textContent = t('normal');
