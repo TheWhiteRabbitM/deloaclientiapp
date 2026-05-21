@@ -7,22 +7,22 @@ let priceData = [];
 
 const APPLIANCES = [
     { id: 'washer', icon: 'local_laundry_service', label: 'Lavatrice', kwh: 1.5, note: 'ciclo eco 40°C' },
-    { id: 'dishwasher', icon: 'dishwasher', label: 'Lavastoviglie', kwh: 1.3, note: 'ciclo eco 50°C' },
-    { id: 'dryer', icon: 'dry', label: 'Asciugatrice', kwh: 2.5, note: 'pompa di calore' },
+    { id: 'dishwasher', icon: 'local_laundry_service', label: 'Lavastoviglie', kwh: 1.3, note: 'ciclo eco 50°C' },
+    { id: 'dryer', icon: 'local_laundry_service', label: 'Asciugatrice', kwh: 2.5, note: 'pompa di calore' },
     { id: 'washer_dryer', icon: 'local_laundry_service', label: 'Lavasciuga', kwh: 3.8, note: 'ciclo combinato' },
-    { id: 'oven', icon: 'oven', label: 'Forno elettrico', kwh: 1.2, note: '1 ora a 180°C' },
-    { id: 'oven_small', icon: 'oven', label: 'Fornetto', kwh: 0.9, note: '1 ora' },
-    { id: 'microwave', icon: 'microwave', label: 'Microonde', kwh: 0.8, note: '15 min potenza max' },
+    { id: 'oven', icon: 'kitchen', label: 'Forno elettrico', kwh: 1.2, note: '1 ora a 180°C' },
+    { id: 'oven_small', icon: 'kitchen', label: 'Fornetto', kwh: 0.9, note: '1 ora' },
+    { id: 'microwave', icon: 'kitchen', label: 'Microonde', kwh: 0.8, note: '15 min potenza max' },
     { id: 'cooktop', icon: 'kitchen', label: 'Piano induzione', kwh: 1.8, note: '1 ora cottura' },
-    { id: 'kettle', icon: 'coffee_maker', label: 'Bollitore', kwh: 0.11, note: '1L 100°C' },
+    { id: 'kettle', icon: 'local_cafe', label: 'Bollitore', kwh: 0.11, note: '1L 100°C' },
     { id: 'ev', icon: 'electric_car', label: 'Ricarica EV', kwh: 15, note: 'ricarica notturna media' },
     { id: 'ev_fast', icon: 'electric_car', label: 'Ricarica EV veloce', kwh: 30, note: 'ricarica completa 40 kWh' },
     { id: 'ac', icon: 'ac_unit', label: 'Climatizzatore', kwh: 1.5, note: '1 ora raffrescamento' },
     { id: 'heat_pump', icon: 'ac_unit', label: 'Pompa di calore', kwh: 2.5, note: '1 ora riscaldamento' },
     { id: 'boiler', icon: 'water_drop', label: 'Scaldabagno', kwh: 2.0, note: '1 ora riscaldamento' },
-    { id: 'iron', icon: 'tty', label: 'Ferro da stiro', kwh: 1.0, note: '1 ora' },
-    { id: 'vacuum', icon: 'vacuum', label: 'Aspirapolvere', kwh: 0.8, note: '1 ora' },
-    { id: 'coffee', icon: 'coffee_maker', label: 'Macchina caffè', kwh: 0.06, note: '1 tazzina' },
+    { id: 'iron', icon: 'local_laundry_service', label: 'Ferro da stiro', kwh: 1.0, note: '1 ora' },
+    { id: 'vacuum', icon: 'local_laundry_service', label: 'Aspirapolvere', kwh: 0.8, note: '1 ora' },
+    { id: 'coffee', icon: 'local_cafe', label: 'Macchina caffè', kwh: 0.06, note: '1 tazzina' },
 ];
 let selectedAppliances = new Set();
 let refreshTimer = null;
