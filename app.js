@@ -6,12 +6,23 @@ const HISTORY_DAYS = 7;
 let priceData = [];
 
 const APPLIANCES = [
-    { id: 'washer', icon: 'local_laundry_service', label: 'Lavatrice', kwh: 1.5 },
-    { id: 'dishwasher', icon: 'dishwasher', label: 'Lavastoviglie', kwh: 1.3 },
-    { id: 'oven', icon: 'oven', label: 'Forno', kwh: 1.0 },
-    { id: 'ev', icon: 'electric_car', label: 'Ricarica EV', kwh: 15 },
-    { id: 'dryer', icon: 'dry', label: 'Asciugatrice', kwh: 2.5 },
-    { id: 'ac', icon: 'ac_unit', label: 'Climatizzatore', kwh: 1.2 },
+    { id: 'washer', icon: 'local_laundry_service', label: 'Lavatrice', kwh: 1.5, note: 'ciclo eco 40°C' },
+    { id: 'dishwasher', icon: 'dishwasher', label: 'Lavastoviglie', kwh: 1.3, note: 'ciclo eco 50°C' },
+    { id: 'dryer', icon: 'dry', label: 'Asciugatrice', kwh: 2.5, note: 'pompa di calore' },
+    { id: 'washer_dryer', icon: 'local_laundry_service', label: 'Lavasciuga', kwh: 3.8, note: 'ciclo combinato' },
+    { id: 'oven', icon: 'oven', label: 'Forno elettrico', kwh: 1.2, note: '1 ora a 180°C' },
+    { id: 'oven_small', icon: 'oven', label: 'Fornetto', kwh: 0.9, note: '1 ora' },
+    { id: 'microwave', icon: 'microwave', label: 'Microonde', kwh: 0.8, note: '15 min potenza max' },
+    { id: 'cooktop', icon: 'cooking', label: 'Piano induzione', kwh: 1.8, note: '1 ora cottura' },
+    { id: 'kettle', icon: 'kettle', label: 'Bollitore', kwh: 0.11, note: '1L 100°C' },
+    { id: 'ev', icon: 'electric_car', label: 'Ricarica EV', kwh: 15, note: 'ricarica notturna media' },
+    { id: 'ev_fast', icon: 'electric_bolt', label: 'Ricarica EV veloce', kwh: 30, note: 'ricarica completa 40 kWh' },
+    { id: 'ac', icon: 'ac_unit', label: 'Climatizzatore', kwh: 1.5, note: '1 ora raffrescamento' },
+    { id: 'heat_pump', icon: 'thermostat', label: 'Pompa di calore', kwh: 2.5, note: '1 ora riscaldamento' },
+    { id: 'boiler', icon: 'water_heater', label: 'Scaldabagno', kwh: 2.0, note: '1 ora riscaldamento' },
+    { id: 'iron', icon: 'iron', label: 'Ferro da stiro', kwh: 1.0, note: '1 ora' },
+    { id: 'vacuum', icon: 'vacuum', label: 'Aspirapolvere', kwh: 0.8, note: '1 ora' },
+    { id: 'coffee', icon: 'coffee_maker', label: 'Macchina caffè', kwh: 0.06, note: '1 tazzina' },
 ];
 let selectedAppliances = new Set();
 let refreshTimer = null;
@@ -333,40 +344,19 @@ function renderTable(currentHour, avgPrice) {
 }
 
 function renderSmartConsumption(avgPrice, currentPrice) {
-    const savingEl = document.getElementById('smart-saving');
-    if (!savingEl) return;
+    const container = document.getElementById('smart-saving');
+    if (!container) return;
 
     const now = new Date();
     const currentHour = now.getHours();
     const band = getHourBand(currentHour);
     const bandPrice = computeBandAvg(band);
 
-    let bandNote = '';
-    if (band === 'F3') {
-        const f1Price = computeBandAvg('F1');
-        if (f1Price && f1Price !== bandPrice) {
-            const d = ((bandPrice - f1Price) / f1Price * 100);
-            if (Math.abs(d) > 0.5) {
-                bandNote = d < 0
-                    ? `${Math.abs(d).toFixed(0)}% in meno della F1`
-                    : `${d.toFixed(0)}% in più della F1`;
-            }
-        }
-    } else {
-        const f3Price = computeBandAvg('F3');
-        if (f3Price) {
-            const d = ((bandPrice - f3Price) / f3Price * 100);
-            if (Math.abs(d) > 0.5 && bandPrice) {
-                bandNote = d < 0
-                    ? `${Math.abs(d).toFixed(0)}% in meno della F3`
-                    : `${d.toFixed(0)}% in più della F3`;
-            }
-        }
-    }
-
     const sorted = [...priceData].sort((a, b) => a.price - b.price);
     const cheapest = sorted[0];
     const mostExp = sorted[sorted.length - 1];
+    const priceMap = {};
+    priceData.forEach(p => { priceMap[p.hour] = p.price; });
 
     let chipsHtml = APPLIANCES.map(a => {
         const sel = selectedAppliances.has(a.id) ? ' appliance-chip--sel' : '';
@@ -380,40 +370,59 @@ function renderSmartConsumption(avgPrice, currentPrice) {
     selectedAppliances.forEach(id => {
         const app = APPLIANCES.find(a => a.id === id);
         if (!app) return;
-        const costNow = currentPrice ? (currentPrice.price * app.kwh) : null;
-        const costCheap = cheapest ? (cheapest.price * app.kwh) : null;
-        const costLate = mostExp ? (mostExp.price * app.kwh) : null;
 
-        let appRows = `
-            <div class="appliance-result__row">
-                <span class="material-icons-round">${app.icon}</span>
-                <span>${app.label}</span>
-                <span class="appliance-result__now">${costNow != null ? costNow.toFixed(2) + ' €' : '—'}</span>
+        const costNow = currentPrice ? currentPrice.price * app.kwh : null;
+        const costBest = cheapest ? cheapest.price * app.kwh : null;
+        const costWorst = mostExp ? mostExp.price * app.kwh : null;
+
+        const pctNow = currentPrice ? ((currentPrice.price - cheapest.price) / cheapest.price * 100) : null;
+        const bestHour = cheapest ? cheapest.hour : null;
+
+        let bodyHtml = `<div class="appliance-result__row">
+            <span class="material-icons-round">${app.icon}</span>
+            <span class="appliance-result__name">${app.label} <span class="appliance-result__kwh">${app.kwh} kWh</span></span>
+            <span class="appliance-result__now">${costNow != null ? costNow.toFixed(2) + ' €' : '—'}</span>
+        </div>`;
+
+        if (costNow != null && costBest != null && bestHour != null) {
+            const saved = costNow - costBest;
+            const pct = pctNow != null ? Math.round(Math.abs(pctNow)) : 0;
+            bodyHtml += `<div class="appliance-result__bars">
+                <div class="appliance-result__bar">
+                    <span>Ora (${String(currentHour).padStart(2, '0')}:00)</span>
+                    <span class="appliance-result__bar-val appliance-result__bar-val--high">${costNow.toFixed(2)} €</span>
+                </div>
+                <div class="appliance-result__bar">
+                    <span>Alle ${String(bestHour).padStart(2, '0')}:00</span>
+                    <span class="appliance-result__bar-val appliance-result__bar-val--low">${costBest.toFixed(2)} €</span>
+                </div>
+                <div class="appliance-result__saved">Risparmi <b>${saved.toFixed(2)} €</b> (${pct}%)</div>
             </div>`;
-        if (cheapest && currentPrice && cheapest.hour !== currentHour && costNow != null && costCheap != null) {
-            const saved = costNow - costCheap;
-            appRows += `<div class="appliance-result__tip">
-                Se aspetti le ${String(cheapest.hour).padStart(2, '0')}:00 spendi <b>${costCheap.toFixed(2)} €</b>
-                (<b class="appliance-result__save">-${saved.toFixed(2)} €</b>)
-            </div>`;
+        } else if (costNow != null && bestHour === currentHour) {
+            bodyHtml += `<div class="appliance-result__bars"><div class="appliance-result__saved appliance-result__saved--now">Prezzo minimo raggiunto ora</div></div>`;
         }
-        resultsHtml += appRows;
+
+        resultsHtml += bodyHtml;
     });
 
-    savingEl.innerHTML = `
+    let bandContextHtml = '';
+    if (bandPrice && cheapest) {
+        const diffFromLowest = ((bandPrice - cheapest.price) / cheapest.price * 100).toFixed(0);
+        const dir = diffFromLowest > 0 ? 'più cara' : 'più economica';
+        const absDiff = Math.abs(diffFromLowest);
+        bandContextHtml = `<div class="smart-block__note">Fascia ${band} (${bandPrice.toFixed(3)} €/kWh) — ${absDiff}% ${dir} del minimo odierno (${cheapest.price.toFixed(3)} €/kWh alle ${String(cheapest.hour).padStart(2, '0')}:00)</div>`;
+    }
+
+    container.innerHTML = `
         <div class="smart-block">
-            <div class="smart-block__label">Fascia attuale</div>
-            <div class="smart-block__value">${band} · ${bandPrice ? bandPrice.toFixed(3) : '—'} €/kWh</div>
-            ${bandNote ? `<div class="smart-block__note">${bandNote}</div>` : ''}
-        </div>
-        <div class="smart-appliances">
-            <div class="smart-appliances__label">${t('smartPickAppliance')}</div>
+            <div class="smart-block__label">${t('smartPickAppliance')}</div>
             <div class="smart-appliances__chips">${chipsHtml}</div>
         </div>
-        ${resultsHtml ? `<div class="smart-appliances__results">${resultsHtml}</div>` : ''}
+        ${resultsHtml ? `<div class="smart-appliances__results">${resultsHtml}</div>` : `<div class="smart-block__note" style="text-align:center;color:var(--text-tertiary);padding:12px 0;">${t('smartNoData')}</div>`}
+        ${bandContextHtml ? `<div class="smart-block" style="margin-top:8px;background:var(--bg-card);">${bandContextHtml}</div>` : ''}
     `;
 
-    savingEl.querySelectorAll('.appliance-chip').forEach(btn => {
+    container.querySelectorAll('.appliance-chip').forEach(btn => {
         btn.addEventListener('click', () => {
             const id = btn.dataset.id;
             if (selectedAppliances.has(id)) {
