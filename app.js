@@ -86,7 +86,8 @@ async function fetchPrices() {
 }
 
 function parsePrices(doc) {
-    const items = doc.querySelectorAll('.deloa-item');
+    const todaySection = doc.querySelector('.deloa-day-section');
+    const items = todaySection ? todaySection.querySelectorAll('.deloa-item') : doc.querySelectorAll('.deloa-item');
     const prices = [];
     items.forEach((item) => {
         const ora = item.querySelector('.ora')?.textContent.trim();
