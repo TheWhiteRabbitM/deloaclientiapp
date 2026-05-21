@@ -136,6 +136,7 @@ function updateUI(history) {
     renderChart(currentHour, avgPrice);
     renderHistory(history);
     renderTable(currentHour, avgPrice);
+    renderSmartConsumption(avgPrice);
     checkNotifications(currentPrice, avgPrice);
 }
 
@@ -284,7 +285,7 @@ function renderChart(currentHour, avgPrice) {
 function renderHistory(history) {
     elements.historyList.innerHTML = '';
 
-    if (history.length <= 1) {
+    if (history.length === 0) {
         elements.historyList.innerHTML = `<p class="history-empty">${t('noHistory')}</p>`;
         return;
     }
@@ -323,6 +324,40 @@ function renderTable(currentHour, avgPrice) {
 
         elements.priceTable.appendChild(item);
     });
+}
+
+function renderSmartConsumption(avgPrice) {
+    const sorted = [...priceData].sort((a, b) => a.price - b.price);
+    const best = sorted.slice(0, 4);
+    const worst = sorted.slice(-4).reverse();
+
+    const bestList = document.getElementById('smart-best-list');
+    const worstList = document.getElementById('smart-worst-list');
+    const savingEl = document.getElementById('smart-saving');
+
+    bestList.innerHTML = best.map(p =>
+        `<span class="smart-chip smart-chip--green">${String(p.hour).padStart(2, '0')}:00 <span class="smart-chip__price">${p.price.toFixed(3)}</span></span>`
+    ).join('');
+
+    worstList.innerHTML = worst.map(p =>
+        `<span class="smart-chip smart-chip--red">${String(p.hour).padStart(2, '0')}:00 <span class="smart-chip__price">${p.price.toFixed(3)}</span></span>`
+    ).join('');
+
+    const consumoAnnuiKwh = 2700;
+    const pctSpostabile = 30;
+    const bestAvg = best.reduce((s, p) => s + p.price, 0) / best.length;
+    const costoOriginale = consumoAnnuiKwh * avgPrice;
+    const consumoSpostabile = consumoAnnuiKwh * (pctSpostabile / 100);
+    const costoOttimizzato = (consumoAnnuiKwh - consumoSpostabile) * avgPrice + consumoSpostabile * bestAvg;
+    const risparmio = costoOriginale - costoOttimizzato;
+
+    if (risparmio > 0) {
+        savingEl.innerHTML =
+            `<span class="smart-saving__highlight">${t('smartSaving', { pct: pctSpostabile, kwh: Math.round(consumoSpostabile), amount: risparmio.toFixed(0) })}</span>` +
+            `<br><small>${t('smartSavingExample')}</small>`;
+    } else {
+        savingEl.innerHTML = `<span class="smart-saving__empty">${t('smartNoData')}</span>`;
+    }
 }
 
 function showLoading() {
