@@ -880,3 +880,154 @@ body {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* === Best hours card === */
+.besthours {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.besthours__row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background-color: var(--bg-card-hover);
+}
+
+.besthours__row .material-icons-round {
+    font-size: 22px;
+}
+
+.besthours__row--good .material-icons-round { color: var(--color-green); }
+.besthours__row--avoid .material-icons-round { color: var(--color-red); }
+
+.besthours__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.besthours__label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+}
+
+.besthours__window {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.besthours__badge {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 8px;
+    white-space: nowrap;
+}
+
+.besthours__badge--good { background-color: var(--color-green-bg); color: var(--color-green); }
+.besthours__badge--avoid { background-color: var(--color-red-bg); color: var(--color-red); }
+[data-theme="dark"] .besthours__badge--good { color: #fff; }
+[data-theme="dark"] .besthours__badge--avoid { color: #fff; }
+
+/* === Status price level badge === */
+.status-card__level {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 2px 10px;
+    border-radius: 6px;
+}
+
+.status-card__level--low { background-color: var(--color-green-light); color: #fff; }
+.status-card__level--mid { background-color: var(--color-yellow-bg); color: #fff; }
+.status-card__level--high { background-color: var(--color-red-light); color: #fff; }
+
+/* === Settings card === */
+.settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+}
+
+.settings-row + .settings-row {
+    border-top: 1px solid var(--border-color);
+}
+
+.settings-row label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    flex: 1;
+}
+
+.settings-input {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+.settings-input input {
+    width: 64px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-card-hover);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    text-align: right;
+    outline: none;
+}
+
+.settings-input input:focus {
+    border-color: var(--deloa-green);
+}
+
+.settings-hint {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    line-height: 1.5;
+    margin-top: 10px;
+}
+
+/* === Offline banner === */
+.offline-banner {
+    position: fixed;
+    left: 50%;
+    top: 64px;
+    transform: translateX(-50%) translateY(-120px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background-color: var(--color-red-light);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    z-index: 190;
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    max-width: calc(100% - 32px);
+}
+
+.offline-banner .material-icons-round {
+    font-size: 18px;
+}
+
+.offline-banner--visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}

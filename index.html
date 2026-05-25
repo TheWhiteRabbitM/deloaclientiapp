@@ -37,6 +37,9 @@
             <button class="icon-btn" id="btn-refresh" aria-label="Aggiorna">
                 <span class="material-icons-round">refresh</span>
             </button>
+            <button class="icon-btn" id="btn-share" aria-label="Condividi">
+                <span class="material-icons-round">share</span>
+            </button>
             <button class="icon-btn" id="btn-notifications" aria-label="Notifiche">
                 <span class="material-icons-round" id="notif-icon">notifications_off</span>
             </button>
@@ -51,6 +54,7 @@
                 <div class="status-card__info">
                     <p class="status-card__label">Prezzo attuale</p>
                     <p class="status-card__value" id="status-value">--</p>
+                    <span class="status-card__level" id="status-level"></span>
                 </div>
                     <div class="status-card__range">
                         <div class="status-card__pill status-card__pill--min">
@@ -78,6 +82,11 @@
                     <span id="next-update">--</span>
                 </div>
             </div>
+        </section>
+
+        <section class="card besthours-card">
+            <h2 class="section-title">Quando conviene oggi</h2>
+            <div class="besthours" id="besthours"></div>
         </section>
 
         <section class="card bands-card">
@@ -118,12 +127,30 @@
             <div class="smart-saving" id="smart-saving"></div>
         </section>
 
+        <section class="card settings-card">
+            <h2 class="section-title">Soglie notifiche</h2>
+            <div class="settings-row">
+                <label id="thr-cheap-label">Avvisa quando conveniente</label>
+                <span class="settings-input"><input type="number" id="thr-cheap" min="10" max="100" step="5" inputmode="numeric"> %</span>
+            </div>
+            <div class="settings-row">
+                <label id="thr-exp-label">Avvisa quando costoso</label>
+                <span class="settings-input"><input type="number" id="thr-exp" min="100" max="300" step="5" inputmode="numeric"> %</span>
+            </div>
+            <p class="settings-hint" id="settings-hint">Percentuale rispetto al prezzo medio del giorno.</p>
+        </section>
+
         <section class="card history-card">
             <h2 class="section-title">Storico Prezzi</h2>
             <div class="history-list" id="history-list"></div>
         </section>
 
     </main>
+
+    <div class="offline-banner" id="offline-banner" role="status" aria-live="polite">
+        <span class="material-icons-round">cloud_off</span>
+        <span id="offline-banner-text">Offline</span>
+    </div>
 
     <div class="snackbar" id="snackbar" role="status" aria-live="polite">
         <span class="snackbar__message" id="snackbar-message"></span>

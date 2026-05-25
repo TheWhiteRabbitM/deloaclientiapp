@@ -50,6 +50,7 @@ const elements = {
     snackbar: document.getElementById('snackbar'),
     snackbarMessage: document.getElementById('snackbar-message'),
     snackbarAction: document.getElementById('snackbar-action'),
+    btnShare: document.getElementById('btn-share'),
 };
 
 function getHistory() {
@@ -188,6 +189,22 @@ function updateUI(history) {
         elements.compareDiff.textContent = '';
     }
 
+    const levelEl = document.getElementById('status-level');
+    if (levelEl) {
+        if (currentPrice) {
+            let lvl, cls;
+            if (currentPrice.price < avgPrice * 0.8) { lvl = t('levelLow'); cls = 'low'; }
+            else if (currentPrice.price > avgPrice * 1.15) { lvl = t('levelHigh'); cls = 'high'; }
+            else { lvl = t('levelMid'); cls = 'mid'; }
+            levelEl.textContent = lvl;
+            levelEl.className = 'status-card__level status-card__level--' + cls;
+        } else {
+            levelEl.textContent = '';
+            levelEl.className = 'status-card__level';
+        }
+    }
+
+    renderBestHours();
     renderBands(currentHour);
     renderChart(currentHour, avgPrice);
     renderHistory(history);
@@ -343,6 +360,11 @@ function renderTable(currentHour, avgPrice) {
     });
 }
 
+function applianceLabel(a) {
+    const translated = t('app_' + a.id);
+    return translated === 'app_' + a.id ? a.label : translated;
+}
+
 function renderSmartConsumption(avgPrice, currentPrice) {
     const container = document.getElementById('smart-saving');
     if (!container) return;
@@ -362,7 +384,7 @@ function renderSmartConsumption(avgPrice, currentPrice) {
         const sel = selectedAppliances.has(a.id) ? ' appliance-chip--sel' : '';
         return `<button class="appliance-chip${sel}" data-id="${a.id}">
             <span class="material-icons-round">${a.icon}</span>
-            <span>${a.label}</span>
+            <span>${applianceLabel(a)}</span>
         </button>`;
     }).join('');
 
@@ -380,7 +402,7 @@ function renderSmartConsumption(avgPrice, currentPrice) {
 
         let bodyHtml = `<div class="appliance-result__row">
             <span class="material-icons-round">${app.icon}</span>
-            <span class="appliance-result__name">${app.label} <span class="appliance-result__kwh">${app.kwh} kWh</span></span>
+            <span class="appliance-result__name">${applianceLabel(app)} <span class="appliance-result__kwh">${app.kwh} kWh</span></span>
             <span class="appliance-result__now">${costNow != null ? costNow.toFixed(2) + ' €' : '—'}</span>
         </div>`;
 
@@ -389,17 +411,17 @@ function renderSmartConsumption(avgPrice, currentPrice) {
             const pct = pctNow != null ? Math.round(Math.abs(pctNow)) : 0;
             bodyHtml += `<div class="appliance-result__bars">
                 <div class="appliance-result__bar">
-                    <span>Ora (${String(currentHour).padStart(2, '0')}:00)</span>
+                    <span>${t('smartNow')} (${String(currentHour).padStart(2, '0')}:00)</span>
                     <span class="appliance-result__bar-val appliance-result__bar-val--high">${costNow.toFixed(2)} €</span>
                 </div>
                 <div class="appliance-result__bar">
-                    <span>Alle ${String(bestHour).padStart(2, '0')}:00</span>
+                    <span>${t('smartAt')} ${String(bestHour).padStart(2, '0')}:00</span>
                     <span class="appliance-result__bar-val appliance-result__bar-val--low">${costBest.toFixed(2)} €</span>
                 </div>
-                <div class="appliance-result__saved">Risparmi <b>${saved.toFixed(2)} €</b> (${pct}%)</div>
+                <div class="appliance-result__saved">${t('smartSaveLabel')} <b>${saved.toFixed(2)} €</b> (${pct}%)</div>
             </div>`;
         } else if (costNow != null && bestHour === currentHour) {
-            bodyHtml += `<div class="appliance-result__bars"><div class="appliance-result__saved appliance-result__saved--now">Prezzo minimo raggiunto ora</div></div>`;
+            bodyHtml += `<div class="appliance-result__bars"><div class="appliance-result__saved appliance-result__saved--now">${t('smartMinNow')}</div></div>`;
         }
 
         resultsHtml += bodyHtml;
@@ -408,9 +430,16 @@ function renderSmartConsumption(avgPrice, currentPrice) {
     let bandContextHtml = '';
     if (bandPrice && cheapest) {
         const diffFromLowest = ((bandPrice - cheapest.price) / cheapest.price * 100).toFixed(0);
-        const dir = diffFromLowest > 0 ? 'più cara' : 'più economica';
+        const dir = diffFromLowest > 0 ? t('smartMoreExpensive') : t('smartCheaper');
         const absDiff = Math.abs(diffFromLowest);
-        bandContextHtml = `<div class="smart-block__note">Fascia ${band} (${bandPrice.toFixed(3)} €/kWh) — ${absDiff}% ${dir} del minimo odierno (${cheapest.price.toFixed(3)} €/kWh alle ${String(cheapest.hour).padStart(2, '0')}:00)</div>`;
+        bandContextHtml = `<div class="smart-block__note">${t('smartBandContext', {
+            band: band,
+            bandPrice: bandPrice.toFixed(3),
+            pct: absDiff,
+            dir: dir,
+            minPrice: cheapest.price.toFixed(3),
+            minHour: String(cheapest.hour).padStart(2, '0') + ':00'
+        })}</div>`;
     }
 
     container.innerHTML = `
@@ -435,6 +464,145 @@ function renderSmartConsumption(avgPrice, currentPrice) {
     });
 }
 
+function findPriceWindows(predicate) {
+    const windows = [];
+    let cur = null;
+    priceData.forEach((p) => {
+        if (predicate(p.price)) {
+            if (cur && p.hour === cur.endHour + 1) {
+                cur.endHour = p.hour;
+                cur.prices.push(p.price);
+            } else {
+                if (cur) windows.push(cur);
+                cur = { startHour: p.hour, endHour: p.hour, prices: [p.price] };
+            }
+        } else if (cur) {
+            windows.push(cur);
+            cur = null;
+        }
+    });
+    if (cur) windows.push(cur);
+    return windows.map((w) => ({
+        start: w.startHour,
+        end: w.endHour,
+        avg: w.prices.reduce((s, x) => s + x, 0) / w.prices.length,
+    }));
+}
+
+function fmtWindow(w) {
+    return `${String(w.start).padStart(2, '0')}:00–${String(w.end + 1).padStart(2, '0')}:00`;
+}
+
+function renderBestHours() {
+    const container = document.getElementById('besthours');
+    if (!container) return;
+    if (priceData.length === 0) {
+        container.innerHTML = `<div class="smart-block__note">${t('smartNoData')}</div>`;
+        return;
+    }
+    const avg = priceData.reduce((s, p) => s + p.price, 0) / priceData.length;
+    const cheapWins = findPriceWindows((pr) => pr <= avg * 0.85);
+    const expWins = findPriceWindows((pr) => pr >= avg * 1.15);
+    const minP = priceData.reduce((m, p) => (p.price < m.price ? p : m));
+    const maxP = priceData.reduce((m, p) => (p.price > m.price ? p : m));
+    const best = cheapWins.length ? cheapWins.reduce((a, b) => (b.avg < a.avg ? b : a)) : { start: minP.hour, end: minP.hour, avg: minP.price };
+    const worst = expWins.length ? expWins.reduce((a, b) => (b.avg > a.avg ? b : a)) : { start: maxP.hour, end: maxP.hour, avg: maxP.price };
+    container.innerHTML = `
+        <div class="besthours__row besthours__row--good">
+            <span class="material-icons-round">eco</span>
+            <div class="besthours__info">
+                <div class="besthours__label">${t('bestGood')}</div>
+                <div class="besthours__window">${fmtWindow(best)}</div>
+            </div>
+            <span class="besthours__badge besthours__badge--good">${best.avg.toFixed(3)} €/kWh</span>
+        </div>
+        <div class="besthours__row besthours__row--avoid">
+            <span class="material-icons-round">warning</span>
+            <div class="besthours__info">
+                <div class="besthours__label">${t('bestAvoid')}</div>
+                <div class="besthours__window">${fmtWindow(worst)}</div>
+            </div>
+            <span class="besthours__badge besthours__badge--avoid">${worst.avg.toFixed(3)} €/kWh</span>
+        </div>
+    `;
+}
+
+function buildShareText() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0') + ':00';
+    let price = '--';
+    let best = '--';
+    if (priceData.length) {
+        const cp = priceData.find((p) => p.hour === now.getHours());
+        price = cp ? cp.price.toFixed(3) : '--';
+        const minP = priceData.reduce((m, p) => (p.price < m.price ? p : m));
+        best = `${String(minP.hour).padStart(2, '0')}:00 (${minP.price.toFixed(3)} €/kWh)`;
+    }
+    return t('shareText', { hour: hh, price: price, best: best });
+}
+
+async function shareApp() {
+    const text = buildShareText();
+    const url = location.href;
+    if (navigator.share) {
+        try {
+            await navigator.share({ title: 'Deloa Energy', text, url });
+            return;
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+        }
+    }
+    try {
+        await navigator.clipboard.writeText(text + ' ' + url);
+        showSnackbar(t('shareCopied'));
+    } catch (e) {
+        showSnackbar(t('shareCopied'));
+    }
+}
+
+function getThresholds() {
+    const c = parseFloat(localStorage.getItem('deloa-thr-cheap'));
+    const e = parseFloat(localStorage.getItem('deloa-thr-exp'));
+    return { cheap: isNaN(c) ? 0.7 : c, exp: isNaN(e) ? 1.4 : e };
+}
+
+function initThresholdSettings() {
+    const c = document.getElementById('thr-cheap');
+    const e = document.getElementById('thr-exp');
+    if (!c || !e) return;
+    const thr = getThresholds();
+    c.value = Math.round(thr.cheap * 100);
+    e.value = Math.round(thr.exp * 100);
+    c.addEventListener('change', () => {
+        let v = parseInt(c.value, 10);
+        if (isNaN(v) || v < 10) v = 10;
+        if (v > 100) v = 100;
+        c.value = v;
+        localStorage.setItem('deloa-thr-cheap', (v / 100).toString());
+        showSnackbar(t('settingsSaved'));
+    });
+    e.addEventListener('change', () => {
+        let v = parseInt(e.value, 10);
+        if (isNaN(v) || v < 100) v = 100;
+        if (v > 300) v = 300;
+        e.value = v;
+        localStorage.setItem('deloa-thr-exp', (v / 100).toString());
+        showSnackbar(t('settingsSaved'));
+    });
+}
+
+function updateOnlineStatus() {
+    const banner = document.getElementById('offline-banner');
+    if (!banner) return;
+    if (navigator.onLine) {
+        banner.classList.remove('offline-banner--visible');
+    } else {
+        const txt = document.getElementById('offline-banner-text');
+        if (txt) txt.textContent = t('offlineMsg');
+        banner.classList.add('offline-banner--visible');
+    }
+}
+
 function showLoading() {
     elements.statusValue.textContent = '';
     elements.chart.innerHTML = '<div class="loading-spinner"></div>';
@@ -443,6 +611,8 @@ function showLoading() {
     if (bandsEl) bandsEl.innerHTML = '';
     const smartEl = document.getElementById('smart-saving');
     if (smartEl) smartEl.innerHTML = '';
+    const bhEl = document.getElementById('besthours');
+    if (bhEl) bhEl.innerHTML = '';
 }
 
 function showError() {
@@ -496,6 +666,7 @@ function androidNotifPermission() {
 }
 
 async function checkNotifications(currentPrice, avgPrice) {
+    const thr = getThresholds();
     const lastNotified = localStorage.getItem('deloa_last_notified');
     const today = new Date().toDateString();
     if (lastNotified === today) return;
@@ -507,14 +678,14 @@ async function checkNotifications(currentPrice, avgPrice) {
     if (!canNotify) return;
 
     if (currentPrice) {
-        if (currentPrice.price < avgPrice * 0.7) {
+        if (currentPrice.price < avgPrice * thr.cheap) {
             const title = `Deloa Energy - ${t('notifCheap')}`;
             const body = t('notifCheapBody').replace('{price}', currentPrice.price.toFixed(3));
             if (!androidNotify(title, body)) {
                 new Notification(title, { body, icon: 'icon-192.png', tag: 'cheap-hour' });
             }
             localStorage.setItem('deloa_last_notified', today);
-        } else if (currentPrice.price > avgPrice * 1.4) {
+        } else if (currentPrice.price > avgPrice * thr.exp) {
             const title = `Deloa Energy - ${t('notifExpensive')}`;
             const body = t('notifExpensiveBody').replace('{price}', currentPrice.price.toFixed(3));
             if (!androidNotify(title, body)) {
@@ -560,7 +731,7 @@ async function requestNotificationPermission() {
             const cur = window.AndroidNotifier.getPermissionStatus();
             if (cur === 'denied') {
                 window.AndroidNotifier.requestPermission();
-                showSnackbar('Richiesta permesso notifiche...');
+                showSnackbar(t('notifRequesting'));
                 const poll = setInterval(() => {
                     const st = window.AndroidNotifier.getPermissionStatus();
                     if (st !== 'denied') {
@@ -585,7 +756,7 @@ async function requestNotificationPermission() {
             return;
         } catch (e) { console.error('Web Notification error:', e); }
     }
-    showSnackbar('Notifiche non disponibili in questa app');
+    showSnackbar(t('noNotifSupport'));
 }
 
 function updateNotificationIcon() {
@@ -613,6 +784,9 @@ elements.btnRefresh.addEventListener('click', () => {
 
 elements.btnTheme.addEventListener('click', toggleTheme);
 elements.btnNotifications.addEventListener('click', requestNotificationPermission);
+if (elements.btnShare) elements.btnShare.addEventListener('click', shareApp);
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
 elements.langSelect.addEventListener('change', (e) => {
     setLanguage(e.target.value);
 });
@@ -645,4 +819,6 @@ elements.langSelect.value = initialLang;
 setLanguage(initialLang);
 
 updateNotificationIcon();
+initThresholdSettings();
+updateOnlineStatus();
 fetchPrices();

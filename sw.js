@@ -1,12 +1,14 @@
-const CACHE_NAME = 'deloa-pwa-v2';
+const CACHE_NAME = 'deloa-pwa-v3';
 const ASSETS = [
-    '/',
-    '/index.html',
-    '/styles.css',
-    '/app.js',
-    '/i18n.js',
-    '/manifest.json',
-    '/deloa.png',
+    './',
+    './index.html',
+    './styles.css',
+    './app.js',
+    './i18n.js',
+    './manifest.json',
+    './deloa.png',
+    './icon-192.png',
+    './icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -35,7 +37,7 @@ self.addEventListener('fetch', (event) => {
                     if (response.ok) {
                         const clone = response.clone();
                         caches.open(CACHE_NAME).then((cache) => {
-                            cache.put(event.request, response);
+                            cache.put(event.request, clone);
                         });
                     }
                     return response;
@@ -93,13 +95,13 @@ async function refreshPrices() {
             if (currentPrice && currentPrice.price < avgPrice * 0.7) {
                 self.registration.showNotification('Deloa Energy - Ora conveniente!', {
                     body: `Prezzo: ${currentPrice.price.toFixed(3)} €/kWh. Usa ora gli elettrodomestici!`,
-                    icon: '/icon.svg',
+                    icon: './icon-192.png',
                     tag: 'cheap-hour',
                 });
             } else if (currentPrice && currentPrice.price > avgPrice * 1.4) {
                 self.registration.showNotification('Deloa Energy - Ora costosa', {
                     body: `Prezzo: ${currentPrice.price.toFixed(3)} €/kWh. Evita elettrodomestici energivori.`,
-                    icon: '/icon.svg',
+                    icon: './icon-192.png',
                     tag: 'expensive-hour',
                 });
             }

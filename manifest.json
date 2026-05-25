@@ -1,33 +1,41 @@
 {
-    "name": "Deloa Energy - Prezzi Orari",
-    "short_name": "Deloa Energy",
-    "description": "Monitora i prezzi orari dell'energia Deloa e risparmia sui consumi domestici",
-    "start_url": "/",
-    "display": "standalone",
-    "background_color": "#1C1B1F",
-    "theme_color": "#1C1B1F",
-    "orientation": "portrait-primary",
-    "icons": [
-        {
-            "src": "deloa.png",
-            "sizes": "any",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
-        }
-    ],
-    "categories": ["utilities", "productivity"],
-    "lang": "it",
-    "dir": "ltr"
+  "name": "Deloa Energy - Prezzi Orari",
+  "short_name": "Deloa Energy",
+  "description": "Monitora i prezzi orari dell'energia Deloa e risparmia sui consumi domestici",
+  "start_url": "/deloaclientiapp/",
+  "scope": "/deloaclientiapp/",
+  "id": "/deloaclientiapp/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#1C1B1F",
+  "background_color": "#1C1B1F",
+  "lang": "it",
+  "dir": "ltr",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    {
+      "src": "/deloaclientiapp/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/deloaclientiapp/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/deloaclientiapp/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/deloaclientiapp/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }
